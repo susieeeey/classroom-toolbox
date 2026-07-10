@@ -1,0 +1,4020 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="description" content="小学课堂互动工具箱：打开即用的随机点名、分组、课堂积分和奖励工具。">
+  <link rel="manifest" href="./manifest.json">
+  <title>小学课堂互动工具箱</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --ink: #1f2937;
+      --muted: #667085;
+      --line: #d8dee8;
+      --blue: #2563eb;
+      --cyan: #0891b2;
+      --green: #16a34a;
+      --orange: #f97316;
+      --red: #dc2626;
+      --yellow: #facc15;
+      --violet: #7c3aed;
+      --shadow: 0 18px 40px rgba(31, 41, 55, .10);
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 12%, rgba(37, 99, 235, .16), transparent 24%),
+        radial-gradient(circle at 88% 8%, rgba(250, 204, 21, .18), transparent 22%),
+        radial-gradient(circle at 82% 86%, rgba(22, 163, 74, .12), transparent 24%),
+        linear-gradient(135deg, #f8fbff 0%, #f2f7ff 44%, #fffaf0 100%);
+      background-size: 32px 32px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before, body::after {
+      content: "";
+      position: fixed;
+      inset: -18vh -12vw auto auto;
+      width: 46vw;
+      height: 46vw;
+      min-width: 420px;
+      min-height: 420px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: -1;
+      background:
+        radial-gradient(circle, rgba(37, 99, 235, .12) 0 18%, transparent 19%),
+        radial-gradient(circle at 70% 68%, rgba(249, 115, 22, .12) 0 12%, transparent 13%);
+      filter: blur(2px);
+      animation: floatGlow 18s ease-in-out infinite alternate;
+    }
+
+    body::after {
+      inset: auto auto -22vh -12vw;
+      background:
+        radial-gradient(circle, rgba(8, 145, 178, .11) 0 17%, transparent 18%),
+        radial-gradient(circle at 66% 38%, rgba(250, 204, 21, .16) 0 11%, transparent 12%);
+      animation-duration: 22s;
+      animation-direction: alternate-reverse;
+    }
+
+    body.reduce-motion::before,
+    body.reduce-motion::after,
+    body.reduce-motion * {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+    }
+
+    button, textarea, input, select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, filter .18s ease;
+      touch-action: manipulation;
+    }
+
+    button:hover { transform: translateY(-2px); }
+    button:active { transform: translateY(1px) scale(.98); }
+    button:disabled { cursor: not-allowed; opacity: .55; transform: none; }
+
+    .app-shell {
+      width: min(1440px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(320px, auto) minmax(280px, 360px);
+      align-items: end;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .title-wrap p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .usage-tips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+      color: #1e3a8a;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .usage-tips span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 9px;
+      border: 1px solid rgba(37, 99, 235, .18);
+      border-radius: 999px;
+      background: rgba(239, 246, 255, .92);
+    }
+
+    .quick-status {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(108px, 1fr));
+      gap: 10px;
+      min-width: 360px;
+    }
+
+    .stat {
+      background: rgba(255, 255, 255, .82);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: 0 8px 20px rgba(31, 41, 55, .06);
+      backdrop-filter: blur(10px);
+    }
+
+    .sound-panel {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid rgba(216, 222, 232, .9);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .86);
+      box-shadow: 0 10px 28px rgba(31, 41, 55, .08);
+      backdrop-filter: blur(12px);
+    }
+
+    .sound-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .sound-toggle {
+      min-height: 38px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .sound-toggle.active {
+      color: #ffffff;
+      border-color: transparent;
+      background: var(--blue);
+      box-shadow: 0 8px 18px rgba(37, 99, 235, .20);
+    }
+
+    .volume-wrap {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .volume-wrap input {
+      width: 100%;
+      accent-color: var(--blue);
+    }
+
+    .audio-tip {
+      min-height: 20px;
+      color: #9a3412;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(360px, 450px) 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel, .tool-section {
+      background: rgba(255, 255, 255, .88);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .roster-panel {
+      position: sticky;
+      top: 18px;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcff;
+    }
+
+    .panel-head h2, .tool-section h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #075985;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .roster-body {
+      padding: 18px 20px 20px;
+    }
+
+    .paste-box {
+      width: 100%;
+      min-height: 210px;
+      resize: vertical;
+      border: 2px solid #9cc6ff;
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: 18px;
+      line-height: 1.55;
+      color: var(--ink);
+      background: #ffffff;
+      outline: none;
+    }
+
+    .paste-box:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, .12);
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      min-height: 50px;
+      padding: 12px 18px;
+      color: white;
+      font-weight: 800;
+      font-size: 17px;
+      box-shadow: 0 10px 18px rgba(31, 41, 55, .12);
+    }
+
+    .btn:hover {
+      box-shadow: 0 14px 28px rgba(31, 41, 55, .18);
+      filter: brightness(1.04);
+    }
+
+    .primary { background: var(--blue); }
+    .secondary { background: #475467; }
+    .success { background: var(--green); }
+    .warning { background: var(--orange); }
+    .danger { background: var(--red); }
+    .cyan { background: var(--cyan); }
+    .violet { background: var(--violet); }
+    .light-btn {
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: #fff;
+      font-weight: 700;
+    }
+
+    .switch-row {
+      display: grid;
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .switch-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .switch-line input {
+      width: 48px;
+      height: 26px;
+      accent-color: var(--blue);
+    }
+
+    .notice {
+      display: none;
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .notice.show { display: block; }
+
+    .privacy-note {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--radius);
+      background: #f0fdf4;
+      color: #166534;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .list-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .student-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-height: 300px;
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfcff;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 6px 9px 6px 12px;
+      border-radius: 999px;
+      background: #eef4ff;
+      border: 1px solid #c7d7fe;
+      color: #1e3a8a;
+      font-weight: 800;
+    }
+
+    .chip.hidden {
+      background: #f2f4f7;
+      border-color: #d0d5dd;
+      color: #98a2b3;
+      text-decoration: line-through;
+    }
+
+    .chip button {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #475467;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .empty {
+      width: 100%;
+      color: var(--muted);
+      text-align: center;
+      padding: 20px 0;
+      font-weight: 700;
+    }
+
+    .tools {
+      display: grid;
+      gap: 18px;
+    }
+
+    .tool-section {
+      padding: 18px;
+      animation: sectionIn .48s ease both;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-title span {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .tool-card {
+      min-height: 96px;
+      padding: 16px 16px 16px 60px;
+      text-align: left;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, .96), rgba(255, 255, 255, .82)),
+        radial-gradient(circle at 88% 14%, color-mix(in srgb, var(--accent, var(--blue)) 16%, transparent), transparent 30%);
+      color: var(--ink);
+      box-shadow: 0 8px 16px rgba(31, 41, 55, .06);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tool-card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 7px;
+      height: 100%;
+      background: var(--accent, var(--blue));
+    }
+
+    .tool-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background: linear-gradient(120deg, transparent 0 30%, rgba(255,255,255,.72) 45%, transparent 62%);
+      transform: translateX(-120%);
+      transition: opacity .18s ease;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 18px 32px rgba(31, 41, 55, .14);
+      border-color: color-mix(in srgb, var(--accent, var(--blue)) 45%, var(--line));
+    }
+
+    .tool-card:hover::after {
+      opacity: .8;
+      animation: sheen 1s ease;
+    }
+
+    .tool-icon {
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background:
+        radial-gradient(circle at 34% 34%, rgba(255,255,255,.9) 0 18%, transparent 19%),
+        var(--accent, var(--blue));
+      box-shadow: 0 8px 16px color-mix(in srgb, var(--accent, var(--blue)) 28%, transparent);
+      transition: transform .2s ease;
+    }
+
+    .tool-card:hover .tool-icon { transform: scale(1.12) rotate(5deg); }
+
+    .tool-card strong {
+      display: block;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .tool-card span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      background: rgba(15, 23, 42, .45);
+      backdrop-filter: blur(8px);
+      z-index: 40;
+      opacity: 0;
+      transition: opacity .22s ease;
+    }
+
+    .modal.open {
+      display: flex;
+      opacity: 1;
+      animation: fadeIn .22s ease both;
+    }
+
+    .stage {
+      width: min(1180px, 100%);
+      max-height: calc(100vh - 56px);
+      overflow: auto;
+      background: #ffffff;
+      border-radius: var(--radius);
+      box-shadow: 0 30px 80px rgba(15, 23, 42, .28);
+      border: 1px solid rgba(255, 255, 255, .6);
+      transform-origin: center;
+      animation: stageIn .24s cubic-bezier(.17, .67, .18, 1.15) both;
+    }
+
+    .stage-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    .stage-head h2 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .close-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      background: #f2f4f7;
+      color: #344054;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .stage-body {
+      padding: 24px;
+    }
+
+    .stage-result {
+      min-height: 290px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      border: 2px dashed #bdd7ff;
+      border-radius: var(--radius);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(250, 204, 21, .18), transparent 24%),
+        radial-gradient(circle at 82% 22%, rgba(8, 145, 178, .14), transparent 26%),
+        #f8fbff;
+      overflow: hidden;
+      padding: 26px;
+      position: relative;
+    }
+
+    .stage-result.flash {
+      animation: resultFlash .75s ease;
+    }
+
+    .stage-result.spotlight {
+      background:
+        radial-gradient(circle at 50% 45%, rgba(255, 255, 255, .95) 0 18%, rgba(250, 204, 21, .26) 19% 34%, transparent 35%),
+        radial-gradient(circle at 20% 20%, rgba(250, 204, 21, .18), transparent 24%),
+        radial-gradient(circle at 82% 22%, rgba(8, 145, 178, .14), transparent 26%),
+        #f8fbff;
+    }
+
+    .big-name {
+      font-size: clamp(56px, 10vw, 138px);
+      font-weight: 1000;
+      line-height: 1.05;
+      color: #0f172a;
+      animation: pop .45s ease both;
+      word-break: keep-all;
+      text-shadow: 0 12px 32px rgba(37, 99, 235, .16);
+    }
+
+    .rolling-name {
+      letter-spacing: 0;
+      filter: blur(.2px);
+      animation: quickPulse .18s linear infinite alternate;
+    }
+
+    .subline {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .stage-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .stage-controls .btn, .stage-controls .light-btn {
+      min-width: 150px;
+      min-height: 50px;
+    }
+
+    .history-box, .config-box {
+      margin-top: 16px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfcff;
+    }
+
+    .history-box h3, .config-box h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 34px;
+    }
+
+    .history-list span {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #ecfdf3;
+      color: #027a48;
+      font-weight: 800;
+    }
+
+    .wheel-wrap {
+      display: grid;
+      grid-template-columns: minmax(280px, 430px) 1fr;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .wheel {
+      width: min(430px, 82vw);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 10px solid #ffffff;
+      box-shadow: 0 16px 42px rgba(15, 23, 42, .20);
+      display: grid;
+      place-items: center;
+      background: conic-gradient(#2563eb 0 14%, #f97316 14% 28%, #16a34a 28% 42%, #facc15 42% 56%, #0891b2 56% 70%, #7c3aed 70% 84%, #ef4444 84% 100%);
+      transition: transform 4.2s cubic-bezier(.12, .72, .08, 1);
+      position: relative;
+    }
+
+    .wheel.spinning {
+      box-shadow: 0 18px 50px rgba(37, 99, 235, .26), 0 0 0 10px rgba(250, 204, 21, .12);
+    }
+
+    .wheel-labels {
+      position: absolute;
+      inset: 12px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .wheel-name {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 46%;
+      transform-origin: 0 0;
+      color: #ffffff;
+      font-weight: 1000;
+      text-shadow: 0 2px 8px rgba(0,0,0,.35);
+      font-size: 13px;
+      text-align: right;
+      opacity: .95;
+    }
+
+    .wheel-name.used { opacity: .28; }
+
+    .wheel::after {
+      content: "";
+      position: absolute;
+      top: -22px;
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 38px solid #111827;
+    }
+
+    .wheel-center {
+      width: 42%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: #ffffff;
+      color: #111827;
+      font-size: clamp(26px, 5vw, 48px);
+      font-weight: 1000;
+      text-align: center;
+      box-shadow: inset 0 0 0 2px #e5e7eb;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+      justify-items: center;
+    }
+
+    .flip-card {
+      width: 160px;
+      height: 210px;
+      min-height: 210px;
+      perspective: 1000px;
+      border: 0;
+      background: transparent;
+      padding: 0;
+    }
+
+    .flip-card:hover .flip-inner,
+    .flip-card:hover .flip-card-inner {
+      transform: translateY(-6px) rotateX(4deg);
+      filter: brightness(1.03);
+    }
+
+    .flip-inner,
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 210px;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+      transition: transform .55s cubic-bezier(.17, .67, .18, 1.12), filter .2s ease;
+    }
+
+    .flip-card.flipped .flip-inner,
+    .flip-card.is-flipped .flip-card-inner { transform: rotateY(180deg); }
+    .cards-grid.has-selection .flip-card:not(.flipped):not(.is-flipped) { opacity: .62; }
+    .flip-card.flipped .flip-back,
+    .flip-card.is-flipped .flip-card-back {
+      box-shadow: 0 0 0 4px rgba(250, 204, 21, .35), 0 14px 26px rgba(249, 115, 22, .18);
+    }
+
+    .flip-face,
+    .flip-card-front,
+    .flip-card-back {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 20px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      padding: 12px;
+      font-size: 22px;
+      font-weight: 1000;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .flip-front,
+    .flip-card-front {
+      background: #1d4ed8;
+      color: #ffffff;
+    }
+
+    .flip-back,
+    .flip-card-back {
+      background: #ffffff;
+      border: 2px solid #fdba74;
+      color: #1f2937;
+      transform: rotateY(180deg);
+      -webkit-transform: rotateY(180deg);
+    }
+
+    .student-name {
+      display: block;
+      color: #1f2937;
+      font-size: clamp(24px, 3vw, 42px);
+      font-weight: 800;
+      line-height: 1.2;
+      text-align: center;
+      opacity: 1;
+      visibility: visible;
+      z-index: 5;
+      padding: 12px;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+    }
+
+    .flip-result {
+      display: none;
+      margin-top: 24px;
+      text-align: center;
+    }
+
+    .flip-result.show {
+      display: block;
+    }
+
+    .flip-result-label {
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .flip-result-name {
+      font-size: clamp(40px, 7vw, 88px);
+      font-weight: 900;
+      line-height: 1.15;
+      color: #111827;
+      word-break: break-all;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .field input, .field select {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      background: #ffffff;
+    }
+
+    .timer-display {
+      font-size: clamp(82px, 16vw, 190px);
+      font-weight: 1000;
+      line-height: 1;
+      color: #111827;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timer-display.danger-time {
+      color: var(--red);
+      animation: shake .25s linear infinite;
+    }
+
+    .group-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .group-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      overflow: hidden;
+      box-shadow: 0 8px 16px rgba(31, 41, 55, .06);
+      transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
+      animation: cardPop .38s ease both;
+    }
+
+    .group-card.glow {
+      animation: scoreGlow .6s ease;
+    }
+
+    .group-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+      font-weight: 1000;
+      font-size: 20px;
+    }
+
+    .score {
+      font-size: 30px;
+      color: var(--blue);
+      font-variant-numeric: tabular-nums;
+      transition: transform .2s ease;
+    }
+
+    .score.bump { animation: scoreBump .42s ease; }
+
+    .group-members {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 74px;
+      padding: 12px;
+    }
+
+    .group-member {
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: #1e3a8a;
+      font-weight: 800;
+    }
+
+    .score-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .score-controls button {
+      min-height: 38px;
+      background: #f2f4f7;
+      color: var(--ink);
+      font-weight: 900;
+    }
+
+    .leaderboard {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .rank-row {
+      display: grid;
+      grid-template-columns: 58px 1fr 88px;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      font-size: 22px;
+      font-weight: 1000;
+      transition: transform .24s ease, box-shadow .24s ease;
+      animation: slideUp .28s ease both;
+    }
+
+    .rank-row .rank {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      color: #ffffff;
+      background: var(--blue);
+    }
+
+    .student-score-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .student-score-row strong {
+      font-size: 20px;
+    }
+
+    .score-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .score-buttons button {
+      min-width: 38px;
+      min-height: 34px;
+      background: #f2f4f7;
+      color: var(--ink);
+      font-weight: 900;
+    }
+
+    .message {
+      padding: 18px;
+      border-radius: var(--radius);
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 24px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .audio-overlay {
+      position: fixed;
+      right: 20px;
+      bottom: 18px;
+      max-width: min(420px, calc(100vw - 40px));
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      background: rgba(255, 247, 237, .94);
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      font-weight: 900;
+      box-shadow: 0 14px 30px rgba(31, 41, 55, .12);
+      z-index: 50;
+      display: none;
+    }
+
+    .audio-overlay.show { display: block; animation: slideUp .24s ease both; }
+
+    .particle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      left: 50%;
+      top: 50%;
+      background: var(--pcolor, #facc15);
+      pointer-events: none;
+      animation: particleFly .9s ease-out forwards;
+    }
+
+    .floating-piece {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      background: rgba(37, 99, 235, .16);
+      pointer-events: none;
+      z-index: -1;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+
+    .number-records {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .number-records span {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: #1e3a8a;
+      font-weight: 900;
+    }
+
+    .timer-ring-wrap {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: min(360px, 76vw);
+      aspect-ratio: 1;
+      margin: 0 auto;
+    }
+
+    .timer-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(var(--blue) var(--progress, 100%), #e5e7eb 0);
+      mask: radial-gradient(circle, transparent 58%, #000 59%);
+    }
+
+    .choice-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .choice-row button {
+      min-height: 40px;
+      padding: 8px 12px;
+      background: #eef4ff;
+      color: #1e3a8a;
+      font-weight: 900;
+    }
+
+    .flower-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .flower-name {
+      padding: 12px 8px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: #ffffff;
+      text-align: center;
+      font-weight: 1000;
+      transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+    }
+
+    .flower-name.active {
+      background: #fef3c7;
+      box-shadow: 0 0 0 4px rgba(250, 204, 21, .28), 0 14px 26px rgba(249, 115, 22, .18);
+      transform: scale(1.08);
+    }
+
+    .bomb-device {
+      display: grid;
+      place-items: center;
+      width: min(280px, 70vw);
+      aspect-ratio: 1;
+      margin: 0 auto 18px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 42%, #ffffff 0 30%, transparent 31%),
+        radial-gradient(circle, #fde68a 0 48%, #f97316 49% 70%, #fff7ed 71%);
+      border: 10px solid #ffffff;
+      box-shadow: 0 18px 42px rgba(249, 115, 22, .20);
+      color: #9a3412;
+      font-size: clamp(54px, 10vw, 112px);
+      font-weight: 1000;
+    }
+
+    .leader-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: #fef3c7;
+      color: #92400e;
+      box-shadow: 0 0 0 3px rgba(250, 204, 21, .24);
+    }
+
+    .score-pop {
+      position: absolute;
+      right: 14px;
+      top: 46px;
+      color: var(--green);
+      font-size: 24px;
+      font-weight: 1000;
+      animation: scorePop .7s ease forwards;
+      pointer-events: none;
+    }
+
+    .award-mark {
+      font-size: clamp(48px, 8vw, 96px);
+      line-height: 1;
+      margin-bottom: 8px;
+      color: #f59e0b;
+      text-shadow: 0 10px 22px rgba(245, 158, 11, .22);
+    }
+
+    .roster-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .roster-summary-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      text-align: center;
+      box-shadow: 0 8px 16px rgba(31, 41, 55, .06);
+    }
+
+    .roster-summary-card b {
+      display: block;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .roster-summary-card span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .roster-manager-list {
+      display: grid;
+      gap: 8px;
+      max-height: 52vh;
+      overflow: auto;
+      margin-top: 12px;
+    }
+
+    .roster-row, .score-row {
+      display: grid;
+      grid-template-columns: minmax(90px, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .roster-row.paused {
+      opacity: .62;
+      background: #f2f4f7;
+    }
+
+    .row-actions, .score-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .mini-btn {
+      min-height: 32px;
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .score-dock {
+      position: fixed;
+      left: 18px;
+      bottom: 18px;
+      z-index: 25;
+      width: min(380px, calc(100vw - 36px));
+      max-height: min(300px, 42vh);
+      pointer-events: none;
+    }
+
+    .score-dock-tab {
+      min-height: 54px;
+      padding: 12px 18px;
+      border-radius: var(--radius);
+      color: #ffffff;
+      background: linear-gradient(135deg, #2563eb, #0891b2);
+      font-size: 18px;
+      font-weight: 1000;
+      box-shadow: 0 16px 32px rgba(37, 99, 235, .24);
+      pointer-events: auto;
+    }
+
+    .score-dock-panel {
+      display: block;
+      max-height: min(300px, 42vh);
+      overflow: hidden;
+      border: 1px solid rgba(216, 222, 232, .92);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .96);
+      box-shadow: 0 20px 52px rgba(15, 23, 42, .22);
+      backdrop-filter: blur(12px);
+      pointer-events: auto;
+      animation: stageIn .2s ease both;
+    }
+
+    .score-dock.collapsed {
+      width: auto;
+    }
+
+    .score-dock.collapsed .score-dock-panel {
+      display: none;
+    }
+
+    .score-dock:not(.collapsed) .score-dock-tab {
+      display: none;
+    }
+
+    .score-dock-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #f8fafc;
+    }
+
+    .score-dock-head h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .score-dock-body {
+      display: grid;
+      gap: 10px;
+      max-height: calc(min(300px, 42vh) - 58px);
+      overflow: auto;
+      padding: 12px;
+    }
+
+    .score-search, .score-custom-row input, .roster-search {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      background: #ffffff;
+    }
+
+    .score-mode-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .score-custom-row {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .score-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .score-row.highlight {
+      animation: scoreGlow .7s ease;
+      border-color: #facc15;
+    }
+
+    .score-name strong {
+      display: block;
+      font-size: 17px;
+    }
+
+    .score-name span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .score-dock-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .quick-score-box {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .84);
+    }
+
+    .quick-score-box h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .quick-score-box.done {
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+
+    .rank-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .rank-options button {
+      min-height: 36px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      font-weight: 900;
+    }
+
+    .magic-area {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .magic-slip {
+      min-height: 132px;
+      border-radius: var(--radius);
+      border: 1px solid #d8b4fe;
+      background:
+        linear-gradient(160deg, #ffffff 0 54%, #f5f3ff 55%),
+        radial-gradient(circle at 22% 20%, rgba(124, 58, 237, .14), transparent 32%);
+      box-shadow: 0 12px 24px rgba(124, 58, 237, .12);
+      display: grid;
+      place-items: center;
+      color: #5b21b6;
+      font-size: 24px;
+      font-weight: 1000;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .magic-slip.shaking {
+      animation: magicShake .18s ease-in-out infinite alternate;
+    }
+
+    .magic-slip.chosen {
+      background: #fff7ed;
+      color: #9a3412;
+      border-color: #fdba74;
+      box-shadow: 0 0 0 5px rgba(250, 204, 21, .28), 0 18px 34px rgba(249, 115, 22, .16);
+      animation: pop .45s ease both;
+    }
+
+    @keyframes magicShake {
+      from { transform: translateY(0) rotate(-1.5deg); }
+      to { transform: translateY(-8px) rotate(1.5deg); }
+    }
+
+    @keyframes pop {
+      from { opacity: 0; transform: scale(.7); }
+      70% { transform: scale(1.08); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes floatGlow {
+      from { transform: translate3d(0, 0, 0) rotate(0deg); }
+      to { transform: translate3d(-30px, 24px, 0) rotate(12deg); }
+    }
+
+    @keyframes drift {
+      from { transform: translateY(0) rotate(0deg); opacity: .45; }
+      to { transform: translateY(-36px) rotate(18deg); opacity: .75; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes stageIn {
+      from { opacity: 0; transform: translateY(24px) scale(.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes sectionIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes sheen {
+      from { transform: translateX(-120%); }
+      to { transform: translateX(120%); }
+    }
+
+    @keyframes resultFlash {
+      0%, 100% { box-shadow: none; }
+      45% { box-shadow: 0 0 0 8px rgba(250, 204, 21, .26), 0 0 60px rgba(37, 99, 235, .22); }
+    }
+
+    @keyframes quickPulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.015); }
+    }
+
+    @keyframes particleFly {
+      from { opacity: 1; transform: translate(-50%, -50%) scale(.8) rotate(0deg); }
+      to { opacity: 0; transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.1) rotate(220deg); }
+    }
+
+    @keyframes cardPop {
+      from { opacity: 0; transform: translateY(16px) scale(.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes scoreGlow {
+      0%, 100% { box-shadow: 0 8px 16px rgba(31, 41, 55, .06); }
+      45% { box-shadow: 0 0 0 4px rgba(250, 204, 21, .30), 0 18px 34px rgba(37, 99, 235, .16); }
+    }
+
+    @keyframes scoreBump {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.22); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes scorePop {
+      from { opacity: 1; transform: translateY(8px) scale(.9); }
+      to { opacity: 0; transform: translateY(-28px) scale(1.12); }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    .pulse {
+      animation: pulse .7s ease infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); filter: brightness(1); }
+      to { transform: scale(1.04); filter: brightness(1.06); }
+    }
+
+    @media (max-width: 1060px) {
+      .topbar {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+      }
+      .quick-status, .sound-panel { min-width: 0; }
+      .layout { grid-template-columns: 1fr; }
+      .roster-panel { position: static; }
+      .tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .wheel-wrap { grid-template-columns: 1fr; }
+      .wheel { justify-self: center; }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell {
+        width: min(100% - 22px, 1440px);
+        padding-top: 18px;
+      }
+      .quick-status, .actions, .tool-grid, .sound-row {
+        grid-template-columns: 1fr;
+      }
+      .modal { padding: 10px; }
+      .stage-body { padding: 16px; }
+      .stage-result { min-height: 240px; }
+      .rank-row { grid-template-columns: 48px 1fr 72px; font-size: 18px; }
+      .roster-summary { grid-template-columns: 1fr; }
+      .score-dock {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        width: auto;
+      }
+      .score-dock-panel {
+        max-height: 42vh;
+      }
+      .score-dock-actions, .score-custom-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="title-wrap">
+        <h1>小学课堂互动工具箱</h1>
+        <p>粘贴一次名单，整节课点名、分组、PK、奖励都能直接用。</p>
+        <div class="usage-tips" aria-label="使用步骤">
+          <span>1. 粘贴名单</span>
+          <span>2. 导入名单</span>
+          <span>3. 选择游戏</span>
+          <span>4. 开始互动</span>
+          <span>无需登录，打开即用</span>
+        </div>
+      </div>
+      <div class="quick-status" aria-label="课堂状态">
+        <div class="stat"><b id="statTotal">0</b><span>名单人数</span></div>
+        <div class="stat"><b id="statActive">0</b><span>参与人数</span></div>
+        <div class="stat"><b id="statDrawn">0</b><span>已抽记录</span></div>
+      </div>
+      <div class="sound-panel" aria-label="课堂音效控制">
+        <div class="sound-row">
+          <button class="sound-toggle" id="soundToggle" type="button">音效 开</button>
+          <button class="sound-toggle" id="musicToggle" type="button">音乐 开</button>
+          <button class="sound-toggle" id="muteToggle" type="button">静音 关</button>
+        </div>
+        <div class="sound-row">
+          <button class="sound-toggle" id="motionToggle" type="button">动画 标准</button>
+          <button class="sound-toggle" id="boostToggle" type="button">课堂扩音 关</button>
+          <button class="sound-toggle" id="testSoundBtn" type="button">试听</button>
+        </div>
+        <button class="sound-toggle" id="stopAudioBtn" type="button">停止音乐</button>
+        <label class="volume-wrap">
+          <span>音量</span>
+          <input id="volumeSlider" type="range" min="0" max="100" value="78">
+          <span id="volumeValue">78%</span>
+        </label>
+        <div class="audio-tip" id="audioTip">点击页面任意位置启用课堂音效。</div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <section class="panel roster-panel" aria-labelledby="rosterTitle">
+        <div class="panel-head">
+          <h2 id="rosterTitle">学生名单粘贴区</h2>
+          <span class="badge" id="savedBadge">本地保存</span>
+        </div>
+        <div class="roster-body">
+          <textarea class="paste-box" id="rosterInput" placeholder="可直接粘贴：
+张三
+2、李四
+3）王五
+赵六、钱七、孙八"></textarea>
+          <div class="actions">
+            <button class="btn primary" id="importBtn">导入名单</button>
+            <button class="btn secondary" id="clearBtn">清空名单</button>
+          </div>
+          <div class="notice" id="duplicateNotice"></div>
+          <div class="privacy-note">学生名单与课堂数据仅保存在当前设备浏览器中，不会上传至服务器。</div>
+
+          <div class="switch-row">
+            <label class="switch-line">
+              <span>允许重复抽取</span>
+              <input type="checkbox" id="allowRepeat">
+            </label>
+          </div>
+
+          <div class="list-tools">
+            <button class="light-btn" id="resetHistoryBtn">重置本节课抽取记录</button>
+            <button class="light-btn" id="showAllBtn">恢复全部参与</button>
+            <button class="light-btn" id="clearLocalDataBtn">一键清除本机数据</button>
+          </div>
+          <div class="student-list" id="studentList">
+            <div class="empty">还没有导入名单</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tools" aria-label="课堂工具">
+        <div class="tool-section">
+          <div class="section-title">
+            <h2>点名类</h2>
+            <span>抽人、号码、转盘、卡牌</span>
+          </div>
+          <div class="tool-grid" id="rollCallTools"></div>
+        </div>
+
+        <div class="tool-section">
+          <div class="section-title">
+            <h2>课堂互动类</h2>
+            <span>翻牌、题号、计时、挑战</span>
+          </div>
+          <div class="tool-grid" id="interactionTools"></div>
+        </div>
+
+        <div class="tool-section">
+          <div class="section-title">
+            <h2>小组类</h2>
+            <span>分组、PK、排行、搭档</span>
+          </div>
+          <div class="tool-grid" id="groupTools"></div>
+        </div>
+
+        <div class="tool-section">
+          <div class="section-title">
+            <h2>课堂奖励类</h2>
+            <span>星级、MVP、进步、积分</span>
+          </div>
+          <div class="tool-grid" id="rewardTools"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="stage">
+      <div class="stage-head">
+        <h2 id="modalTitle">课堂工具</h2>
+        <button class="close-btn" id="closeModal" aria-label="关闭">×</button>
+      </div>
+      <div class="stage-body" id="stageBody"></div>
+    </div>
+  </div>
+
+  <div class="audio-overlay" id="audioOverlay">点击页面任意位置启用课堂音效。</div>
+
+  <aside class="score-dock collapsed" id="scoreDock" aria-label="课堂积分">
+    <button class="score-dock-tab" id="scoreDockToggle" type="button">课堂积分</button>
+    <div class="score-dock-panel">
+      <div class="score-dock-head">
+        <h2>课堂积分</h2>
+        <button class="close-btn" id="scoreDockClose" type="button" aria-label="收起">×</button>
+      </div>
+      <div class="score-dock-body">
+        <input class="score-search" id="scoreSearch" type="search" placeholder="搜索学生姓名">
+        <div class="score-mode-row">
+          <label><input type="radio" name="scoreMode" value="lesson" checked> 每节课重新开始</label>
+          <label><input type="radio" name="scoreMode" value="total"> 累计保存</label>
+        </div>
+        <div class="score-mode-row">
+          <label><input type="radio" name="mvpScoreMode" value="lesson" checked> MVP看本节课</label>
+          <label><input type="radio" name="mvpScoreMode" value="total"> MVP看累计分</label>
+        </div>
+        <div class="score-custom-row">
+          <input id="scoreCustomValue" type="number" value="3" aria-label="自定义分数">
+          <button class="light-btn" id="scoreApplyCustom" type="button">自定义加分</button>
+        </div>
+        <div class="score-list" id="scoreQuickList"></div>
+        <div class="score-dock-actions">
+          <button class="light-btn" id="showAllScores" type="button">查看全部学生</button>
+          <button class="light-btn" id="showScoreRank" type="button">积分排行榜</button>
+          <button class="light-btn" id="showScoreLogs" type="button">操作记录</button>
+          <button class="light-btn" id="undoScoreBtn" type="button">撤销上一步</button>
+          <button class="light-btn" id="endLessonBtn" type="button">结束本节课</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    const STORAGE_KEY = "primaryClassroomToolbox.v1";
+
+    const state = {
+      students: [],
+      allowRepeat: false,
+      drawHistory: [],
+      groups: [],
+      classScores: {},
+      numberHistory: [],
+      groupScoreUndo: [],
+      scoreUndo: [],
+      scoreLogs: [],
+      recentScoreStudentIds: [],
+      awardedStudentIds: [],
+      scorePanelOpen: false,
+      scoreMode: "lesson",
+      mvpScoreMode: "lesson",
+      showQuickScore: true,
+      audio: {
+        soundEnabled: true,
+        musicEnabled: true,
+        muted: false,
+        volume: 0.78,
+        reduceMotion: false,
+        classroomBoost: false
+      },
+      wheelRotation: 0,
+      timerId: null,
+      flowerId: null,
+      bombId: null,
+      animationId: null
+    };
+
+    const tools = {
+      rollCall: [
+        ["randomName", "随机点名", "快速抽一位同学", "#2563eb"],
+        ["noRepeatName", "不重复点名", "优先抽未回答同学", "#16a34a"],
+        ["wheel", "幸运转盘", "大屏转盘抽人", "#f97316"],
+        ["magicDraw", "魔法抽签", "抽签动画出结果", "#7c3aed"],
+        ["luckyNumber", "幸运号码", "按名单序号抽取", "#0891b2"],
+        ["luckyCards", "幸运卡牌", "翻开卡牌见名字", "#ef4444"]
+      ],
+      interaction: [
+        ["flipChallenge", "翻牌挑战", "翻开课堂挑战卡", "#2563eb"],
+        ["flipStudent", "翻牌抽人", "翻牌抽取同学", "#f97316"],
+        ["questionNumber", "随机题号", "随机生成题号", "#16a34a"],
+        ["quizTimer", "倒计时抢答", "清晰倒计时", "#dc2626"],
+        ["passingFlower", "击鼓传花", "名字快速流转", "#0891b2"],
+        ["bombTimer", "炸弹倒计时", "随机结束抽人", "#7c3aed"]
+      ],
+      group: [
+        ["randomGroups", "自动随机分组", "按人数或组数生成", "#16a34a"],
+        ["groupPK", "小组PK积分", "手动加分扣分", "#2563eb"],
+        ["groupRank", "小组排行榜", "投屏展示排行", "#f97316"],
+        ["groupStudent", "小组抽人", "先抽组再抽人", "#0891b2"],
+        ["groupLeader", "随机组长", "每组抽一位组长", "#7c3aed"],
+        ["partner", "随机搭档", "两两搭档或三人组", "#ef4444"]
+      ],
+      reward: [
+        ["luckyStar", "幸运之星", "从名单或已回答抽取", "#facc15"],
+        ["mvp", "今日课堂MVP", "抽取今日高光同学", "#2563eb"],
+        ["braveAward", "勇敢回答奖", "奖励已回答同学", "#16a34a"],
+        ["progressStar", "进步之星", "鼓励进步表现", "#f97316"],
+        ["activeStar", "课堂积极之星", "按参与次数抽取", "#0891b2"],
+        ["classScore", "课堂积分榜", "学生个人积分", "#7c3aed"]
+      ]
+    };
+
+    const challengeCards = [
+      "朗读一句课文", "说出一个关键词", "解释一个新词", "出一道题考同桌",
+      "用英文说一句话", "心算一道题", "分享一个发现", "给小组加油",
+      "复述刚才的答案", "补充一个理由", "指出一个易错点", "做一次小老师"
+    ];
+
+    const els = {
+      rosterInput: document.getElementById("rosterInput"),
+      importBtn: document.getElementById("importBtn"),
+      clearBtn: document.getElementById("clearBtn"),
+      allowRepeat: document.getElementById("allowRepeat"),
+      resetHistoryBtn: document.getElementById("resetHistoryBtn"),
+      showAllBtn: document.getElementById("showAllBtn"),
+      clearLocalDataBtn: document.getElementById("clearLocalDataBtn"),
+      duplicateNotice: document.getElementById("duplicateNotice"),
+      studentList: document.getElementById("studentList"),
+      statTotal: document.getElementById("statTotal"),
+      statActive: document.getElementById("statActive"),
+      statDrawn: document.getElementById("statDrawn"),
+      savedBadge: document.getElementById("savedBadge"),
+      modal: document.getElementById("modal"),
+      modalTitle: document.getElementById("modalTitle"),
+      closeModal: document.getElementById("closeModal"),
+      stageBody: document.getElementById("stageBody"),
+      soundToggle: document.getElementById("soundToggle"),
+      musicToggle: document.getElementById("musicToggle"),
+      muteToggle: document.getElementById("muteToggle"),
+      motionToggle: document.getElementById("motionToggle"),
+      boostToggle: document.getElementById("boostToggle"),
+      testSoundBtn: document.getElementById("testSoundBtn"),
+      stopAudioBtn: document.getElementById("stopAudioBtn"),
+      volumeSlider: document.getElementById("volumeSlider"),
+      volumeValue: document.getElementById("volumeValue"),
+      audioTip: document.getElementById("audioTip"),
+      audioOverlay: document.getElementById("audioOverlay"),
+      scoreDock: document.getElementById("scoreDock"),
+      scoreDockToggle: document.getElementById("scoreDockToggle"),
+      scoreDockClose: document.getElementById("scoreDockClose"),
+      scoreSearch: document.getElementById("scoreSearch"),
+      scoreQuickList: document.getElementById("scoreQuickList"),
+      scoreCustomValue: document.getElementById("scoreCustomValue"),
+      scoreApplyCustom: document.getElementById("scoreApplyCustom"),
+      showAllScores: document.getElementById("showAllScores"),
+      showScoreRank: document.getElementById("showScoreRank"),
+      showScoreLogs: document.getElementById("showScoreLogs"),
+      undoScoreBtn: document.getElementById("undoScoreBtn"),
+      endLessonBtn: document.getElementById("endLessonBtn")
+    };
+
+    const audioManager = {
+      ctx: null,
+      unlocked: false,
+      currentLoop: null,
+      loopTimer: null,
+      audioCache: {},
+      init() {
+        this.applySettings();
+      },
+      unlock() {
+        if (this.unlocked) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) {
+          els.audioTip.textContent = "当前浏览器不支持课堂音效。";
+          return;
+        }
+        this.ctx = this.ctx || new AudioContext();
+        if (this.ctx.state === "suspended") this.ctx.resume();
+        this.unlocked = true;
+        els.audioTip.textContent = "课堂音效已启用。";
+        els.audioOverlay.classList.remove("show");
+      },
+      gainValue(multiplier = 1) {
+        if (state.audio.muted) return 0;
+        const isButtonLike = multiplier <= 0.14;
+        const boost = state.audio.classroomBoost ? (isButtonLike ? 1.12 : 1.45) : 1;
+        const value = state.audio.volume * multiplier * 1.55 * boost;
+        return Math.max(0, Math.min(0.95, value));
+      },
+      canPlay(kind) {
+        if (state.audio.muted) return false;
+        if (kind === "music") return state.audio.musicEnabled;
+        return state.audio.soundEnabled;
+      },
+      ensureUnlocked() {
+        if (this.unlocked) return true;
+        els.audioOverlay.classList.add("show");
+        els.audioTip.textContent = "点击页面任意位置启用课堂音效。";
+        return false;
+      },
+      tone(freq, duration = 0.12, type = "sine", gain = 0.18) {
+        if (!this.canPlay("sound") || !this.ensureUnlocked() || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const amp = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        amp.gain.setValueAtTime(0.0001, now);
+        amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, this.gainValue(gain)), now + 0.02);
+        amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        osc.connect(amp).connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + duration + 0.03);
+      },
+      play(name) {
+        if (!this.canPlay("sound") || !this.ensureUnlocked()) return;
+        const patterns = {
+          click: () => this.tone(520, .07, "triangle", .16),
+          start: () => { this.tone(420, .08, "sine", .22); setTimeout(() => this.tone(640, .10, "sine", .24), 80); },
+          suspense: () => this.tone(620, .08, "triangle", .20),
+          cardFlip: () => { this.tone(320, .05, "square", .18); setTimeout(() => this.tone(760, .06, "triangle", .20), 55); },
+          reveal: () => { this.tone(520, .10, "sine", .30); setTimeout(() => this.tone(840, .18, "sine", .34), 110); },
+          success: () => { [520, 660, 880].forEach((f, i) => setTimeout(() => this.tone(f, .11, "triangle", .26), i * 85)); },
+          applause: () => { [700, 820, 760, 920, 860, 980, 880].forEach((f, i) => setTimeout(() => this.tone(f, .06, "square", .34), i * 52)); },
+          countdown: () => this.tone(880, .12, "sine", .36),
+          explosionSoft: () => { this.tone(140, .14, "triangle", .28); setTimeout(() => this.tone(360, .14, "sine", .22), 80); },
+          scoreAdd: () => { this.tone(660, .08, "triangle", .22); setTimeout(() => this.tone(880, .08, "triangle", .24), 70); },
+          scoreMinus: () => this.tone(260, .12, "sine", .20)
+        };
+        (patterns[name] || patterns.click)();
+      },
+      startLoop(name) {
+        if (!this.canPlay("music") || !this.ensureUnlocked()) return;
+        this.stopLoop();
+        this.currentLoop = name;
+        const tick = () => {
+          if (!this.currentLoop || !this.canPlay("music")) return;
+          if (name === "drum") {
+            this.tone(170, .07, "triangle", .32);
+            setTimeout(() => this.tone(230, .06, "triangle", .24), 120);
+          } else if (name === "roulette") {
+            this.tone(560, .04, "triangle", .22);
+          } else if (name === "ticking") {
+            this.tone(760, .04, "sine", .20);
+          } else if (name === "background") {
+            this.tone(392, .16, "sine", .08);
+            setTimeout(() => this.tone(523, .14, "sine", .07), 260);
+          } else {
+            this.tone(520 + Math.random() * 180, .06, "triangle", .22);
+          }
+          const delay = name === "drum" ? 360 : name === "roulette" ? 92 : name === "ticking" ? 650 : name === "background" ? 1800 : 140;
+          this.loopTimer = setTimeout(tick, delay);
+        };
+        tick();
+      },
+      stopLoop() {
+        this.currentLoop = null;
+        if (this.loopTimer) clearTimeout(this.loopTimer);
+        this.loopTimer = null;
+      },
+      applySettings() {
+        document.body.classList.toggle("reduce-motion", state.audio.reduceMotion);
+        els.soundToggle.textContent = state.audio.soundEnabled ? "音效 开" : "音效 关";
+        els.musicToggle.textContent = state.audio.musicEnabled ? "音乐 开" : "音乐 关";
+        els.muteToggle.textContent = state.audio.muted ? "静音 开" : "静音 关";
+        els.motionToggle.textContent = state.audio.reduceMotion ? "动画 减少" : "动画 标准";
+        els.boostToggle.textContent = state.audio.classroomBoost ? "课堂扩音 开" : "课堂扩音 关";
+        els.soundToggle.classList.toggle("active", state.audio.soundEnabled && !state.audio.muted);
+        els.musicToggle.classList.toggle("active", state.audio.musicEnabled && !state.audio.muted);
+        els.muteToggle.classList.toggle("active", state.audio.muted);
+        els.motionToggle.classList.toggle("active", !state.audio.reduceMotion);
+        els.boostToggle.classList.toggle("active", state.audio.classroomBoost);
+        els.volumeSlider.value = Math.round(state.audio.volume * 100);
+        els.volumeValue.textContent = `${Math.round(state.audio.volume * 100)}%`;
+        if (state.audio.muted || !state.audio.musicEnabled) this.stopLoop();
+      }
+    };
+
+    function uid() {
+      return "s_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+    }
+
+    function normalizeStudent(student, scoreFallback = 0) {
+      const isActive = typeof student.active === "boolean" ? student.active : !student.hidden;
+      return {
+        id: student.id || uid(),
+        name: student.name || "未命名",
+        active: isActive,
+        hidden: !isActive,
+        score: Number(student.score ?? scoreFallback ?? 0),
+        lessonScore: Number(student.lessonScore ?? 0),
+        scoreCount: Number(student.scoreCount ?? 0),
+        lessonScoreCount: Number(student.lessonScoreCount ?? 0),
+        calledCount: Number(student.calledCount ?? 0),
+        answeredCount: Number(student.answeredCount ?? 0),
+        lastScoreTime: Number(student.lastScoreTime ?? 0),
+        awardHistory: Array.isArray(student.awardHistory) ? student.awardHistory : []
+      };
+    }
+
+    function normalizeAllStudents() {
+      state.students = state.students.map((student) => normalizeStudent(student, state.classScores[student.id] || 0));
+    }
+
+    function studentScore(student, mode = state.mvpScoreMode) {
+      return mode === "total" ? Number(student.score || 0) : Number(student.lessonScore || 0);
+    }
+
+    function participationStudents() {
+      return state.students.filter((student) => student.active !== false && !student.hidden);
+    }
+
+    function saveState() {
+      const data = {
+        students: state.students,
+        allowRepeat: state.allowRepeat,
+        drawHistory: state.drawHistory,
+        groups: state.groups,
+        classScores: state.classScores,
+        numberHistory: state.numberHistory,
+        scoreUndo: state.scoreUndo,
+        scoreLogs: state.scoreLogs,
+        recentScoreStudentIds: state.recentScoreStudentIds,
+        awardedStudentIds: state.awardedStudentIds,
+        scorePanelOpen: state.scorePanelOpen,
+        scoreMode: state.scoreMode,
+        mvpScoreMode: state.mvpScoreMode,
+        showQuickScore: state.showQuickScore,
+        audio: state.audio
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        els.savedBadge.textContent = "已本地保存";
+      } catch (error) {
+        els.savedBadge.textContent = "本地保存不可用";
+      }
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        state.students = Array.isArray(data.students) ? data.students : [];
+        state.allowRepeat = Boolean(data.allowRepeat);
+        state.drawHistory = Array.isArray(data.drawHistory) ? data.drawHistory : [];
+        state.groups = Array.isArray(data.groups) ? data.groups : [];
+        state.classScores = data.classScores && typeof data.classScores === "object" ? data.classScores : {};
+        state.numberHistory = Array.isArray(data.numberHistory) ? data.numberHistory : [];
+        state.scoreUndo = Array.isArray(data.scoreUndo) ? data.scoreUndo : [];
+        state.scoreLogs = Array.isArray(data.scoreLogs) ? data.scoreLogs : [];
+        state.recentScoreStudentIds = Array.isArray(data.recentScoreStudentIds) ? data.recentScoreStudentIds : [];
+        state.awardedStudentIds = Array.isArray(data.awardedStudentIds) ? data.awardedStudentIds : [];
+        state.scorePanelOpen = Boolean(data.scorePanelOpen);
+        state.scoreMode = data.scoreMode === "total" ? "total" : "lesson";
+        state.mvpScoreMode = data.mvpScoreMode === "total" ? "total" : "lesson";
+        state.showQuickScore = data.showQuickScore !== false;
+        if (data.audio && typeof data.audio === "object") {
+          state.audio = { ...state.audio, ...data.audio };
+          if (typeof data.audio.classroomBoost === "undefined" && Number(state.audio.volume) < 0.6) {
+            state.audio.volume = 0.78;
+          }
+        }
+        normalizeAllStudents();
+        els.rosterInput.value = state.students.map((student, index) => `${index + 1}. ${student.name}`).join("\n");
+        els.allowRepeat.checked = state.allowRepeat;
+      } catch (error) {
+        console.warn("无法读取本地名单", error);
+      }
+    }
+
+    function cleanName(token) {
+      return token
+        .replace(/^[\s\u3000]*第?[0-9０-９一二三四五六七八九十百]+[.、,，)）:：号名\s\u3000-]*/u, "")
+        .replace(/^[\s\u3000]*[.、,，)）:：-]+/u, "")
+        .replace(/[;；，,、。.!！?？:：]+$/u, "")
+        .replace(/[“”"'《》<>【】\[\]{}]/g, "")
+        .trim();
+    }
+
+    function parseRoster(text) {
+      const normalized = text
+        .replace(/\r/g, "\n")
+        .replace(/[|\/\\]+/g, "\n")
+        .replace(/[、,，;；\t]+/g, "\n")
+        .replace(/\s{2,}/g, "\n");
+      const names = [];
+      const seen = new Set();
+      const duplicates = new Set();
+
+      normalized.split(/\n+/).forEach((line) => {
+        const pieces = line.split(/\s+/).filter(Boolean);
+        (pieces.length ? pieces : [line]).forEach((piece) => {
+          const name = cleanName(piece);
+          if (!name) return;
+          if (/^[0-9０-９一二三四五六七八九十百]+$/u.test(name)) return;
+          if (seen.has(name)) {
+            duplicates.add(name);
+          } else {
+            seen.add(name);
+            names.push(name);
+          }
+        });
+      });
+
+      return { names, duplicates: Array.from(duplicates) };
+    }
+
+    function activeStudents() {
+      return state.students.filter((student) => student.active !== false && !student.hidden);
+    }
+
+    function availableStudents() {
+      const active = activeStudents();
+      if (state.allowRepeat) return active;
+      const drawnIds = new Set(state.drawHistory.map((item) => item.id));
+      return active.filter((student) => !drawnIds.has(student.id));
+    }
+
+    function randomItem(items) {
+      if (!items.length) return null;
+      return items[Math.floor(Math.random() * items.length)];
+    }
+
+    function recordDraw(student, toolLabel) {
+      student.calledCount = Number(student.calledCount || 0) + 1;
+      state.drawHistory.push({ id: student.id, name: student.name, tool: toolLabel, time: Date.now() });
+      saveState();
+      renderAll();
+    }
+
+    function shuffle(items) {
+      const copy = items.slice();
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function drawStudent(toolLabel, options = {}) {
+      let pool;
+      if (options.fromAnswered) {
+        pool = state.drawHistory.map((item) => state.students.find((student) => student.id === item.id)).filter(Boolean);
+      } else if (options.forceNoRepeat) {
+        const drawnIds = new Set(state.drawHistory.map((item) => item.id));
+        pool = activeStudents().filter((student) => !drawnIds.has(student.id));
+      } else {
+        pool = options.forceRepeat ? activeStudents() : availableStudents();
+      }
+      const student = randomItem(pool);
+      if (!student) return null;
+      recordDraw(student, toolLabel);
+      return student;
+    }
+
+    function renderAll() {
+      const active = activeStudents();
+      els.statTotal.textContent = state.students.length;
+      els.statActive.textContent = active.length;
+      els.statDrawn.textContent = state.drawHistory.length;
+      els.allowRepeat.checked = state.allowRepeat;
+      renderScorePanel();
+
+      if (!state.students.length) {
+        els.studentList.innerHTML = '<div class="empty">还没有导入名单</div>';
+        return;
+      }
+
+      const paused = state.students.length - active.length;
+      els.studentList.innerHTML = `
+        <div class="roster-summary">
+          <div class="roster-summary-card"><b>${state.students.length}</b><span>当前班级</span></div>
+          <div class="roster-summary-card"><b>${active.length}</b><span>参与课堂</span></div>
+          <div class="roster-summary-card"><b>${paused}</b><span>请假/暂停</span></div>
+        </div>
+        <div class="list-tools">
+          <button class="light-btn" data-open-roster-manager>管理名单</button>
+          <button class="light-btn" data-reimport-roster>重新导入</button>
+          <button class="light-btn" data-clear-roster-inline>清空名单</button>
+        </div>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function showAudioTip() {
+      if (!audioManager.unlocked && (state.audio.soundEnabled || state.audio.musicEnabled) && !state.audio.muted) {
+        els.audioOverlay.classList.add("show");
+      }
+    }
+
+    function clearAnimation() {
+      if (state.animationId) {
+        cancelAnimationFrame(state.animationId);
+        state.animationId = null;
+      }
+    }
+
+    function flashResult() {
+      if (state.audio.reduceMotion) return;
+      const box = document.getElementById("resultBox");
+      if (!box) return;
+      box.classList.remove("flash", "spotlight");
+      void box.offsetWidth;
+      box.classList.add("flash", "spotlight");
+    }
+
+    function burstParticles(container = document.getElementById("resultBox"), count = 36) {
+      if (!container || state.audio.reduceMotion) return;
+      const colors = ["#2563eb", "#16a34a", "#f97316", "#facc15", "#0891b2", "#7c3aed", "#ef4444"];
+      for (let i = 0; i < count; i += 1) {
+        const particle = document.createElement("span");
+        particle.className = "particle";
+        const angle = (Math.PI * 2 * i) / count;
+        const distance = 80 + Math.random() * 160;
+        particle.style.setProperty("--tx", `${Math.cos(angle) * distance}px`);
+        particle.style.setProperty("--ty", `${Math.sin(angle) * distance}px`);
+        particle.style.setProperty("--pcolor", colors[i % colors.length]);
+        particle.style.transform = `rotate(${Math.random() * 180}deg)`;
+        container.appendChild(particle);
+        setTimeout(() => particle.remove(), 1000);
+      }
+    }
+
+    function celebrate(sound = "success") {
+      flashResult();
+      burstParticles();
+      audioManager.play("reveal");
+      setTimeout(() => audioManager.play(sound), 180);
+    }
+
+    async function rollNamesToResult(finalStudent, label, toolLabel, options = {}) {
+      const pool = options.forceNoRepeat ? activeStudents().filter((student) => !new Set(state.drawHistory.map((item) => item.id)).has(student.id)) : activeStudents();
+      const names = pool.length ? pool : activeStudents();
+      const bigName = document.getElementById("bigName");
+      const sub = document.getElementById("subline");
+      if (!bigName || !sub || !finalStudent) return;
+      bigName.classList.add("rolling-name");
+      sub.textContent = "快速滚动中";
+      audioManager.play("start");
+      audioManager.startLoop("suspense");
+      const steps = state.audio.reduceMotion ? 8 : 32;
+      for (let i = 0; i < steps; i += 1) {
+        const picked = randomItem(names);
+        bigName.textContent = picked ? picked.name : "...";
+        await sleep(28 + i * 7);
+      }
+      audioManager.stopLoop();
+      bigName.classList.remove("rolling-name");
+      recordDraw(finalStudent, toolLabel);
+      setBigResult(finalStudent.name, label);
+      updateQuickScoreBox(finalStudent);
+      refreshHistoryBox();
+      celebrate("applause");
+    }
+
+    function drawStudentCandidate(options = {}) {
+      let pool;
+      if (options.fromAnswered) {
+        pool = state.drawHistory.map((item) => state.students.find((student) => student.id === item.id)).filter(Boolean);
+      } else if (options.forceNoRepeat) {
+        const drawnIds = new Set(state.drawHistory.map((item) => item.id));
+        pool = activeStudents().filter((student) => !drawnIds.has(student.id));
+      } else {
+        pool = options.forceRepeat ? activeStudents() : availableStudents();
+      }
+      return randomItem(pool);
+    }
+
+    function ensureRoster() {
+      if (activeStudents().length) return true;
+      openModal("需要先导入名单", `<div class="message">请先在首页粘贴并导入学生名单，再使用课堂工具。</div>`);
+      return false;
+    }
+
+    function openModal(title, html) {
+      stopAllTimers();
+      audioManager.play("click");
+      els.modalTitle.textContent = title;
+      els.stageBody.innerHTML = html;
+      els.modal.classList.add("open");
+      showAudioTip();
+    }
+
+    function closeModal() {
+      stopAllTimers();
+      els.modal.classList.remove("open");
+      els.stageBody.innerHTML = "";
+    }
+
+    function stopAllTimers() {
+      if (state.timerId) clearInterval(state.timerId);
+      if (state.flowerId) clearInterval(state.flowerId);
+      if (state.bombId) clearInterval(state.bombId);
+      clearAnimation();
+      audioManager.stopLoop();
+      state.timerId = null;
+      state.flowerId = null;
+      state.bombId = null;
+    }
+
+    function resultTemplate(message = "准备开始", subline = "点击下方按钮") {
+      return `
+        <div class="stage-result" id="resultBox">
+          <div>
+            <div class="big-name" id="bigName">${escapeHtml(message)}</div>
+            <div class="subline" id="subline">${escapeHtml(subline)}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function setBigResult(name, subline) {
+      const bigName = document.getElementById("bigName");
+      const sub = document.getElementById("subline");
+      if (!bigName || !sub) return;
+      bigName.classList.remove("pulse");
+      void bigName.offsetWidth;
+      bigName.textContent = name;
+      sub.textContent = subline || "";
+      bigName.classList.add("pulse");
+      setTimeout(() => bigName.classList.remove("pulse"), 900);
+    }
+
+    function renderHistoryBox() {
+      const recent = state.drawHistory.slice(-24).reverse();
+      return `
+        <div class="history-box">
+          <h3>本节课已抽记录</h3>
+          <div class="history-list" id="modalHistory">
+            ${recent.length ? recent.map((item) => `<span>${escapeHtml(item.name)}</span>`).join("") : '<span>暂无记录</span>'}
+          </div>
+        </div>
+      `;
+    }
+
+    function refreshHistoryBox() {
+      const box = document.getElementById("modalHistory");
+      if (!box) return;
+      const recent = state.drawHistory.slice(-24).reverse();
+      box.innerHTML = recent.length ? recent.map((item) => `<span>${escapeHtml(item.name)}</span>`).join("") : "<span>暂无记录</span>";
+    }
+
+    function findStudent(id) {
+      return state.students.find((student) => student.id === id);
+    }
+
+    function addScore(studentId, value, reason = "课堂积分") {
+      const student = findStudent(studentId);
+      if (!student || !Number.isFinite(Number(value)) || Number(value) === 0) return;
+      value = Number(value);
+      state.scoreUndo.push({
+        studentId,
+        beforeScore: Number(student.score || 0),
+        beforeLessonScore: Number(student.lessonScore || 0),
+        beforeScoreCount: Number(student.scoreCount || 0),
+        beforeLessonScoreCount: Number(student.lessonScoreCount || 0),
+        time: Date.now()
+      });
+      if (state.scoreMode === "total") {
+        student.score = Number(student.score || 0) + value;
+      }
+      student.lessonScore = Number(student.lessonScore || 0) + value;
+      if (value > 0) {
+        student.scoreCount = Number(student.scoreCount || 0) + 1;
+        student.lessonScoreCount = Number(student.lessonScoreCount || 0) + 1;
+        student.lastScoreTime = Date.now();
+      }
+      state.scoreLogs.unshift({ studentId, name: student.name, value, reason, time: Date.now() });
+      state.scoreLogs = state.scoreLogs.slice(0, 120);
+      state.recentScoreStudentIds = [studentId, ...state.recentScoreStudentIds.filter((id) => id !== studentId)].slice(0, 8);
+      audioManager.play(value >= 0 ? "scoreAdd" : "scoreMinus");
+      saveState();
+      renderScorePanel(studentId);
+    }
+
+    function undoScore() {
+      const prev = state.scoreUndo.pop();
+      if (!prev) return;
+      const student = findStudent(prev.studentId);
+      if (!student) return;
+      student.score = prev.beforeScore;
+      student.lessonScore = prev.beforeLessonScore;
+      student.scoreCount = prev.beforeScoreCount;
+      student.lessonScoreCount = prev.beforeLessonScoreCount;
+      state.scoreLogs.unshift({ studentId: student.id, name: student.name, value: 0, reason: "撤销上一步", time: Date.now() });
+      audioManager.play("click");
+      saveState();
+      renderScorePanel(student.id);
+    }
+
+    function scoreCandidates(query = "") {
+      const q = query.trim();
+      let students = q
+        ? state.students.filter((student) => student.name.includes(q))
+        : state.recentScoreStudentIds.map(findStudent).filter(Boolean);
+      if (!students.length) students = activeStudents().slice(0, 6);
+      return students.slice(0, 8);
+    }
+
+    function renderScorePanel(highlightId = "") {
+      if (!els.scoreDock) return;
+      els.scoreDock.classList.toggle("collapsed", !state.scorePanelOpen);
+      document.querySelectorAll('input[name="scoreMode"]').forEach((input) => { input.checked = input.value === state.scoreMode; });
+      document.querySelectorAll('input[name="mvpScoreMode"]').forEach((input) => { input.checked = input.value === state.mvpScoreMode; });
+      const rows = scoreCandidates(els.scoreSearch ? els.scoreSearch.value : "").map((student) => `
+        <div class="score-row ${student.id === highlightId ? "highlight" : ""}" data-score-student="${student.id}">
+          <div class="score-name">
+            <strong>${escapeHtml(student.name)}：${student.lessonScore || 0} 分</strong>
+            <span>累计 ${student.score || 0} 分 · 得分 ${student.lessonScoreCount || 0} 次${student.active === false || student.hidden ? " · 暂停参与" : ""}</span>
+          </div>
+          <div class="score-actions">
+            <button class="mini-btn" data-quick-score="-1">-1</button>
+            <button class="mini-btn" data-quick-score="1">+1</button>
+            <button class="mini-btn" data-quick-score="2">+2</button>
+            <button class="mini-btn" data-quick-score="5">+5</button>
+            <button class="mini-btn" data-clear-student-score>清零</button>
+          </div>
+        </div>
+      `).join("");
+      els.scoreQuickList.innerHTML = rows || '<div class="empty">导入名单后可直接加分</div>';
+    }
+
+    function renderQuickScore(student) {
+      if (!state.showQuickScore || !student) return "";
+      return `
+        <div class="quick-score-box" id="quickScoreBox" data-student-id="${student.id}">
+          <h3>${escapeHtml(student.name)} 快捷加分</h3>
+          <div class="stage-controls" style="margin-top:0;justify-content:flex-start;">
+            <button class="btn success" data-result-score="2">回答优秀 +2</button>
+            <button class="btn cyan" data-result-score="1">积极参与 +1</button>
+            <button class="btn warning" data-result-score="1">需要鼓励 +1</button>
+            <button class="light-btn" data-result-score="custom">自定义加分</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateQuickScoreBox(student) {
+      const old = document.getElementById("quickScoreBox");
+      if (old) old.remove();
+      const resultBox = document.getElementById("resultBox");
+      if (resultBox && resultBox.parentElement && student) {
+        resultBox.insertAdjacentHTML("afterend", renderQuickScore(student));
+      }
+    }
+
+    function openRosterManager() {
+      openModal("管理名单", `
+        <div class="config-box">
+          <div class="form-grid">
+            <input class="roster-search" id="rosterSearch" type="search" placeholder="搜索学生姓名">
+            <button class="btn success" id="restoreAllRoster">恢复全员参与</button>
+          </div>
+        </div>
+        <div class="roster-manager-list" id="rosterManagerList"></div>
+      `);
+      const render = () => {
+        const q = document.getElementById("rosterSearch").value.trim();
+        const rows = state.students
+          .filter((student) => !q || student.name.includes(q))
+          .map((student) => `
+            <div class="roster-row ${student.active === false || student.hidden ? "paused" : ""}" data-roster-id="${student.id}">
+              <div>
+                <strong>${escapeHtml(student.name)}</strong>
+                <div class="subline" style="font-size:14px;margin-top:4px;">本节课 ${student.lessonScore || 0} 分 · 累计 ${student.score || 0} 分 · 点名 ${student.calledCount || 0} 次</div>
+              </div>
+              <div class="row-actions">
+                <button class="mini-btn" data-roster-toggle>${student.active === false || student.hidden ? "恢复参与" : "暂停参与"}</button>
+                <button class="mini-btn" data-roster-rename>修改姓名</button>
+                <button class="mini-btn" data-roster-delete>删除</button>
+              </div>
+            </div>
+          `).join("");
+        document.getElementById("rosterManagerList").innerHTML = rows || '<div class="empty">没有匹配学生</div>';
+      };
+      document.getElementById("rosterSearch").addEventListener("input", render);
+      document.getElementById("restoreAllRoster").addEventListener("click", () => {
+        state.students.forEach((student) => { student.active = true; student.hidden = false; });
+        saveState();
+        renderAll();
+        render();
+      });
+      document.getElementById("rosterManagerList").addEventListener("click", (event) => {
+        const row = event.target.closest("[data-roster-id]");
+        if (!row) return;
+        const student = findStudent(row.dataset.rosterId);
+        if (!student) return;
+        if (event.target.closest("[data-roster-toggle]")) {
+          const nextActive = student.active === false || student.hidden;
+          student.active = nextActive;
+          student.hidden = !nextActive;
+        }
+        if (event.target.closest("[data-roster-rename]")) {
+          const next = prompt("请输入新的学生姓名", student.name);
+          if (next && next.trim()) student.name = next.trim();
+        }
+        if (event.target.closest("[data-roster-delete]")) {
+          if (confirm(`确定删除 ${student.name} 吗？积分记录也会从名单中移除。`)) {
+            state.students = state.students.filter((item) => item.id !== student.id);
+          }
+        }
+        saveState();
+        renderAll();
+        render();
+      });
+      render();
+    }
+
+    function rankStudents() {
+      const active = activeStudents();
+      return active.slice().sort((a, b) => studentScore(b, state.mvpScoreMode) - studentScore(a, state.mvpScoreMode));
+    }
+
+    function openScoreRank(limit = "all", hideScore = false) {
+      let currentLimit = limit;
+      let currentHideScore = hideScore;
+      const renderRank = (rankLimit = limit, hidden = hideScore) => {
+        const sorted = rankStudents();
+        const limited = rankLimit === "all" ? sorted : sorted.slice(0, Number(rankLimit));
+        let previousScore = null;
+        let currentRank = 0;
+        return `
+          <div class="rank-options">
+            <button data-rank-limit="all">全部</button>
+            <button data-rank-limit="5">前5名</button>
+            <button data-rank-limit="10">前10名</button>
+            <button data-hide-score="${hidden ? "0" : "1"}">${hidden ? "显示分数" : "隐藏分数"}</button>
+          </div>
+          <div class="leaderboard" id="scoreRankBoard">
+            ${limited.map((student, index) => {
+              const score = studentScore(student, state.mvpScoreMode);
+              if (score !== previousScore) currentRank = index + 1;
+              previousScore = score;
+              const medal = currentRank === 1 ? "★" : currentRank === 2 ? "☆" : currentRank === 3 ? "◇" : currentRank;
+              return `
+                <div class="rank-row">
+                  <span class="rank">${medal}</span>
+                  <span>${escapeHtml(student.name)}</span>
+                  <span>${hidden ? "" : `${score} 分`}</span>
+                </div>
+              `;
+            }).join("") || '<div class="message">暂无可参与学生</div>'}
+          </div>
+        `;
+      };
+      openModal("积分排行榜", renderRank(currentLimit, currentHideScore));
+      els.stageBody.addEventListener("click", (event) => {
+        const limitButton = event.target.closest("[data-rank-limit]");
+        const hideButton = event.target.closest("[data-hide-score]");
+        if (limitButton) {
+          currentLimit = limitButton.dataset.rankLimit;
+          els.stageBody.innerHTML = renderRank(currentLimit, currentHideScore);
+        }
+        if (hideButton) {
+          currentHideScore = hideButton.dataset.hideScore === "1";
+          els.stageBody.innerHTML = renderRank(currentLimit, currentHideScore);
+        }
+      }, { once: false });
+    }
+
+    function openScoreLogs() {
+      openModal("积分操作记录", `
+        <div class="leaderboard">
+          ${state.scoreLogs.slice(0, 50).map((log) => `
+            <div class="student-score-row">
+              <strong>${escapeHtml(log.name)}：${log.value > 0 ? "+" : ""}${log.value} 分</strong>
+              <span>${escapeHtml(log.reason)}</span>
+            </div>
+          `).join("") || '<div class="message">暂无积分操作记录</div>'}
+        </div>
+      `);
+    }
+
+    function openEndLessonDialog() {
+      openModal("结束本节课", `
+        <div class="message">请选择本节课结束后的处理方式</div>
+        <div class="stage-controls">
+          <button class="btn danger" id="clearLessonAll">清空本节课积分和记录</button>
+          <button class="btn warning" id="keepTotalOnly">保留累计积分，只清空本节课记录</button>
+          <button class="light-btn" id="continueLesson">暂不清空，继续使用</button>
+        </div>
+      `);
+      document.getElementById("clearLessonAll").addEventListener("click", () => {
+        if (!confirm("确定清空本节课积分、点名记录和获奖记录吗？累计积分会保留。")) return;
+        state.students.forEach((student) => {
+          student.lessonScore = 0;
+          student.lessonScoreCount = 0;
+          student.calledCount = 0;
+          student.answeredCount = 0;
+          student.awardHistory = [];
+        });
+        state.drawHistory = [];
+        state.awardedStudentIds = [];
+        state.scoreLogs = [];
+        saveState();
+        renderAll();
+        closeModal();
+      });
+      document.getElementById("keepTotalOnly").addEventListener("click", () => {
+        if (!confirm("确定只清空本节课记录，保留累计积分吗？")) return;
+        state.students.forEach((student) => {
+          student.lessonScore = 0;
+          student.lessonScoreCount = 0;
+          student.calledCount = 0;
+          student.answeredCount = 0;
+          student.awardHistory = [];
+        });
+        state.drawHistory = [];
+        state.awardedStudentIds = [];
+        saveState();
+        renderAll();
+        closeModal();
+      });
+      document.getElementById("continueLesson").addEventListener("click", closeModal);
+    }
+
+    async function drawButton(label, toolLabel, options = {}) {
+      const student = drawStudentCandidate(options);
+      if (!student) {
+        setBigResult("已全部抽完", "可开启重复抽取，或重置本节课记录");
+        audioManager.play("scoreMinus");
+        return;
+      }
+      await rollNamesToResult(student, label, toolLabel, options);
+    }
+
+    function renderSimpleDraw(title, buttonText, subline, toolLabel, options = {}) {
+      if (!ensureRoster()) return;
+      openModal(title, `
+        ${resultTemplate("准备抽取", subline)}
+        <div class="stage-controls">
+          <button class="btn primary" id="drawNow">${buttonText}</button>
+          <button class="btn cyan" id="drawAgain">再次抽取</button>
+          <button class="light-btn" id="resetRecordInline">重置记录</button>
+          <button class="light-btn" id="returnHomeInline">返回</button>
+        </div>
+        ${renderHistoryBox()}
+      `);
+      document.getElementById("drawNow").addEventListener("click", () => drawButton(subline, toolLabel, options));
+      document.getElementById("drawAgain").addEventListener("click", () => drawButton(subline, toolLabel, options));
+      document.getElementById("returnHomeInline").addEventListener("click", closeModal);
+      document.getElementById("resetRecordInline").addEventListener("click", () => {
+        state.drawHistory = [];
+        saveState();
+        renderAll();
+        refreshHistoryBox();
+        setBigResult("记录已重置", "可以重新开始抽取");
+        audioManager.play("success");
+      });
+    }
+
+    async function rollNumber(finalNumber, subline, recordKey = "lucky", recordValue = finalNumber) {
+      const bigName = document.getElementById("bigName");
+      const sub = document.getElementById("subline");
+      if (!bigName || !sub) return;
+      const min = Number(bigName.dataset.min || 1);
+      const max = Number(bigName.dataset.max || Math.max(30, finalNumber));
+      bigName.classList.add("rolling-name");
+      sub.textContent = "数字滚动中";
+      audioManager.startLoop("roulette");
+      const steps = state.audio.reduceMotion ? 8 : 30;
+      for (let i = 0; i < steps; i += 1) {
+        bigName.textContent = Math.floor(Math.random() * (max - min + 1)) + min;
+        audioManager.play("suspense");
+        await sleep(24 + i * 6);
+      }
+      audioManager.stopLoop();
+      bigName.classList.remove("rolling-name");
+      bigName.textContent = finalNumber;
+      sub.textContent = subline;
+      state.numberHistory.push({ key: recordKey, value: recordValue, time: Date.now() });
+      saveState();
+      renderNumberRecords(recordKey);
+      celebrate("success");
+    }
+
+    function renderNumberRecords(recordKey) {
+      const box = document.getElementById("numberRecords");
+      if (!box) return;
+      const records = state.numberHistory.filter((item) => item.key === recordKey).slice(-30).reverse();
+      box.innerHTML = records.length ? records.map((item) => `<span>${item.value}</span>`).join("") : "<span>暂无记录</span>";
+    }
+
+    function renderLuckyNumber() {
+      if (!ensureRoster()) return;
+      openModal("幸运号码", `
+        ${resultTemplate("准备抽号", "按当前名单序号抽取")}
+        <div class="stage-controls">
+          <button class="btn cyan" id="drawNumber">抽取号码</button>
+          <button class="light-btn" id="clearNumberHistory">清空号码记录</button>
+        </div>
+        <div class="history-box"><h3>已抽号码</h3><div class="number-records" id="numberRecords"></div></div>
+        ${renderHistoryBox()}
+      `);
+      renderNumberRecords("luckyNumber");
+      document.getElementById("drawNumber").addEventListener("click", () => {
+        const student = drawStudentCandidate({});
+        if (!student) {
+          setBigResult("已全部抽完", "可开启重复抽取，或重置本节课记录");
+          return;
+        }
+        const index = state.students.findIndex((item) => item.id === student.id) + 1;
+        document.getElementById("bigName").dataset.min = 1;
+        document.getElementById("bigName").dataset.max = state.students.length;
+        recordDraw(student, "幸运号码");
+        rollNumber(index, student.name, "luckyNumber");
+        setTimeout(() => updateQuickScoreBox(student), state.audio.reduceMotion ? 500 : 1200);
+        refreshHistoryBox();
+      });
+      document.getElementById("clearNumberHistory").addEventListener("click", () => {
+        state.numberHistory = state.numberHistory.filter((item) => item.key !== "luckyNumber");
+        saveState();
+        renderNumberRecords("luckyNumber");
+      });
+    }
+
+    function renderWheel() {
+      if (!ensureRoster()) return;
+      let wheelAllowRepeat = state.allowRepeat;
+      const buildWheel = () => {
+        const pool = wheelAllowRepeat ? activeStudents() : availableStudents();
+        if (!pool.length) {
+          return `<div class="message">当前没有可抽取学生。可开启允许重复，或重置本节课记录。</div>`;
+        }
+        const colors = ["#2563eb", "#f97316", "#16a34a", "#facc15", "#0891b2", "#7c3aed", "#ef4444", "#0ea5e9"];
+        const step = 100 / pool.length;
+        const gradient = pool.map((student, index) => `${colors[index % colors.length]} ${index * step}% ${(index + 1) * step}%`).join(", ");
+        const labels = pool.map((student, index) => {
+          const angle = (index + .5) * (360 / pool.length);
+          return `<span class="wheel-name" style="transform: rotate(${angle}deg) translate(-8px, -50%);">${escapeHtml(student.name)}</span>`;
+        }).join("");
+        return `
+          <div class="wheel" id="wheelDisk" style="background: conic-gradient(${gradient});" data-pool="${pool.map((student) => student.id).join(",")}">
+            <div class="wheel-labels">${labels}</div>
+            <div class="wheel-center" id="wheelCenter">开始</div>
+          </div>
+        `;
+      };
+      openModal("幸运转盘", `
+        <div class="wheel-wrap">
+          <div id="wheelMount">${buildWheel()}</div>
+          <div>
+            ${resultTemplate("幸运转盘", "点击开始，转盘会抽出一位同学")}
+            <div class="switch-row">
+              <label class="switch-line"><span>本转盘允许重复</span><input type="checkbox" id="wheelRepeat" ${wheelAllowRepeat ? "checked" : ""}></label>
+            </div>
+            <div class="stage-controls">
+              <button class="btn warning" id="spinWheel">开始转盘</button>
+              <button class="light-btn" id="resetWheelRecord">重置记录</button>
+            </div>
+            ${renderHistoryBox()}
+          </div>
+        </div>
+      `);
+      document.getElementById("wheelRepeat").addEventListener("change", (event) => {
+        wheelAllowRepeat = event.target.checked;
+        document.getElementById("wheelMount").innerHTML = buildWheel();
+      });
+      document.getElementById("resetWheelRecord").addEventListener("click", () => {
+        state.drawHistory = [];
+        saveState();
+        renderAll();
+        refreshHistoryBox();
+        document.getElementById("wheelMount").innerHTML = buildWheel();
+        setBigResult("记录已重置", "可以重新开始转盘");
+      });
+      document.getElementById("spinWheel").addEventListener("click", (event) => {
+        const spinButton = event.currentTarget;
+        const pool = wheelAllowRepeat ? activeStudents() : availableStudents();
+        const student = randomItem(pool);
+        if (!student) {
+          setBigResult("已全部抽完", "可开启重复抽取，或重置本节课记录");
+          audioManager.play("scoreMinus");
+          return;
+        }
+        const wheelDisk = document.getElementById("wheelDisk");
+        const poolIds = wheelDisk.dataset.pool.split(",");
+        const index = poolIds.indexOf(student.id);
+        const segment = 360 / poolIds.length;
+        const centerAngle = index * segment + segment / 2;
+        const targetRotation = (Math.ceil(state.wheelRotation / 360) + 7) * 360 - centerAngle;
+        spinButton.disabled = true;
+        state.wheelRotation = targetRotation;
+        wheelDisk.classList.add("spinning");
+        wheelDisk.style.transform = `rotate(${state.wheelRotation}deg)`;
+        document.getElementById("wheelCenter").textContent = "转";
+        setBigResult("转动中", "请同学们一起倒数");
+        audioManager.play("start");
+        audioManager.startLoop("roulette");
+        let ticks = 0;
+        const clicker = setInterval(() => {
+          ticks += 1;
+          if (ticks % 2 === 0) audioManager.play("click");
+        }, 180);
+        setTimeout(() => {
+          clearInterval(clicker);
+          audioManager.stopLoop();
+          recordDraw(student, "幸运转盘");
+          document.getElementById("wheelCenter").textContent = student.name;
+          setBigResult(student.name, "幸运转盘抽中");
+          updateQuickScoreBox(student);
+          refreshHistoryBox();
+          celebrate("applause");
+          wheelDisk.classList.remove("spinning");
+          if (!wheelAllowRepeat) document.getElementById("wheelMount").innerHTML = buildWheel();
+          spinButton.disabled = false;
+        }, state.audio.reduceMotion ? 900 : 4300);
+      });
+    }
+
+    function renderMagicDraw() {
+      if (!ensureRoster()) return;
+      const slips = Array.from({ length: Math.min(8, Math.max(4, activeStudents().length)) }, (_, index) => index + 1);
+      openModal("魔法抽签", `
+        <div class="magic-area" id="magicArea">
+          ${slips.map((item) => `<button class="magic-slip" data-slip="${item}">签 ${item}</button>`).join("")}
+        </div>
+        ${resultTemplate("抽签筒已准备", "点击开始，纸条会跳出")}
+        <div class="stage-controls">
+          <button class="btn violet" id="startMagic">开始抽签</button>
+          <button class="light-btn" id="returnMagic">返回</button>
+        </div>
+        ${renderHistoryBox()}
+      `);
+      document.getElementById("returnMagic").addEventListener("click", closeModal);
+      document.getElementById("startMagic").addEventListener("click", async (event) => {
+        const magicButton = event.currentTarget;
+        const student = drawStudentCandidate({});
+        if (!student) {
+          setBigResult("已全部抽完", "可开启重复抽取，或重置本节课记录");
+          return;
+        }
+        magicButton.disabled = true;
+        const all = Array.from(document.querySelectorAll(".magic-slip"));
+        all.forEach((slip) => slip.classList.add("shaking"));
+        audioManager.play("start");
+        audioManager.startLoop("suspense");
+        setBigResult("纸条摇动中", "请同学们一起期待");
+        await sleep(state.audio.reduceMotion ? 500 : 1500);
+        audioManager.stopLoop();
+        all.forEach((slip) => slip.classList.remove("shaking"));
+        const chosen = randomItem(all);
+        if (chosen) {
+          chosen.classList.add("chosen");
+          chosen.textContent = student.name;
+        }
+        recordDraw(student, "魔法抽签");
+        setBigResult(student.name, "魔法抽签抽中");
+        updateQuickScoreBox(student);
+        refreshHistoryBox();
+        celebrate("applause");
+        magicButton.disabled = false;
+      });
+    }
+
+    function renderCards(title, mode) {
+      if (!ensureRoster()) return;
+      const studentPool = state.allowRepeat ? activeStudents() : availableStudents();
+      const pool = mode === "challenge" ? challengeCards : studentPool;
+      const items = shuffle(pool).slice(0, Math.min(pool.length, 24));
+      if (!items.length) {
+        openModal(title, `<div class="message">当前没有可翻开的学生卡。可开启重复抽取，或重置本节课记录。</div>`);
+        return;
+      }
+      openModal(title, `
+        <div class="stage-controls" style="margin-top:0;margin-bottom:16px;">
+          <button class="btn primary" id="shuffleCards">重新洗牌</button>
+          <button class="light-btn" id="returnCards">返回</button>
+        </div>
+        <div class="cards-grid">
+          ${items.map((item, index) => `
+            <button class="flip-card" data-card-value="${escapeHtml(mode === "challenge" ? item : item.name)}" data-card-id="${mode === "challenge" ? "" : item.id}" data-student-id="${mode === "challenge" ? "" : item.id}">
+              <span class="flip-inner flip-card-inner">
+                <span class="flip-face flip-front flip-card-front"><span>?</span><span style="position:absolute;bottom:16px;font-size:18px;">${index + 1}</span></span>
+                <span class="flip-face flip-back flip-card-back">
+                  <span class="student-name">${mode === "challenge" ? escapeHtml(item) : escapeHtml(item.name)}</span>
+                </span>
+              </span>
+            </button>
+          `).join("")}
+        </div>
+        <div id="flip-result" class="flip-result">
+          <div class="flip-result-label">抽中学生</div>
+          <div id="flip-result-name" class="flip-result-name"></div>
+        </div>
+        ${mode === "student" ? renderHistoryBox() : ""}
+      `);
+      document.getElementById("shuffleCards").addEventListener("click", () => {
+        audioManager.play("cardFlip");
+        renderCards(title, mode);
+      });
+      document.getElementById("returnCards").addEventListener("click", closeModal);
+      document.querySelectorAll(".flip-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          if (card.classList.contains("flipped") || card.classList.contains("is-flipped")) return;
+          audioManager.play("cardFlip");
+          card.classList.add("flipped");
+          card.classList.add("is-flipped");
+          card.closest(".cards-grid").classList.add("has-selection");
+          const nameEl = card.querySelector(".student-name");
+          const result = document.querySelector("#flip-result");
+          const resultName = document.querySelector("#flip-result-name");
+          if (mode === "challenge") {
+            const challengeText = card.dataset.cardValue || "挑战卡";
+            if (nameEl) nameEl.textContent = challengeText;
+            audioManager.play("reveal");
+            burstParticles(card, 14);
+            return;
+          }
+          const student = state.students.find((item) => String(item.id) === card.dataset.studentId);
+          console.log("当前翻牌学生：", student);
+          console.log("当前学生姓名：", student?.name);
+          console.log("姓名元素：", nameEl);
+          console.log("翻牌状态：", card.classList.contains("is-flipped"));
+          const studentName = student?.name || "未读取到学生姓名，请重新导入名单";
+          if (nameEl) nameEl.textContent = studentName;
+          if (resultName) resultName.textContent = studentName;
+          if (result) result.classList.add("show");
+          if (student) recordDraw(student, title);
+          refreshHistoryBox();
+          if (student) updateQuickScoreBox(student);
+          celebrate("success");
+        });
+      });
+    }
+
+    function renderQuestionNumber() {
+      openModal("随机题号", `
+        <div class="config-box">
+          <div class="form-grid">
+            <div class="field"><label>最小题号</label><input id="minQuestion" type="number" value="1" min="1"></div>
+            <div class="field"><label>最大题号</label><input id="maxQuestion" type="number" value="20" min="1"></div>
+            <label class="switch-line"><span>题号不重复</span><input type="checkbox" id="questionNoRepeat" checked></label>
+            <button class="btn success" id="drawQuestion">抽题号</button>
+            <button class="light-btn" id="clearQuestionHistory">清空记录</button>
+          </div>
+        </div>
+        ${resultTemplate("准备抽题", "设置范围后抽取")}
+        <div class="history-box"><h3>已抽题号</h3><div class="number-records" id="numberRecords"></div></div>
+      `);
+      renderNumberRecords("questionNumber");
+      document.getElementById("drawQuestion").addEventListener("click", async () => {
+        let min = Number(document.getElementById("minQuestion").value) || 1;
+        let max = Number(document.getElementById("maxQuestion").value) || 20;
+        if (min > max) [min, max] = [max, min];
+        const used = new Set(state.numberHistory.filter((item) => item.key === "questionNumber").map((item) => item.value));
+        const candidates = [];
+        for (let value = min; value <= max; value += 1) {
+          if (!document.getElementById("questionNoRepeat").checked || !used.has(value)) candidates.push(value);
+        }
+        if (!candidates.length) {
+          setBigResult("已抽完", "请清空记录或关闭不重复");
+          audioManager.play("scoreMinus");
+          return;
+        }
+        const number = randomItem(candidates);
+        document.getElementById("bigName").dataset.min = min;
+        document.getElementById("bigName").dataset.max = max;
+        await rollNumber(`${number} 题`, `范围：${min} - ${max}`, "questionNumber", number);
+      });
+      document.getElementById("clearQuestionHistory").addEventListener("click", () => {
+        state.numberHistory = state.numberHistory.filter((item) => item.key !== "questionNumber");
+        saveState();
+        renderNumberRecords("questionNumber");
+      });
+    }
+
+    function renderQuizTimer(kind) {
+      openModal("倒计时抢答", `
+        <div class="config-box">
+          <div class="choice-row" id="presetTimes">
+            ${[3, 5, 10, 15, 30].map((value) => `<button type="button" data-time="${value}">${value}秒</button>`).join("")}
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>自定义秒数</label><input id="timerSeconds" type="number" value="30" min="3" max="600"></div>
+            <button class="btn primary" id="startTimer">开始</button>
+            <button class="light-btn" id="pauseTimer">暂停</button>
+            <button class="light-btn" id="resumeTimer">继续</button>
+            <button class="light-btn" id="resetTimer">重置</button>
+          </div>
+        </div>
+        <div class="stage-result">
+          <div class="timer-ring-wrap">
+            <div class="timer-ring" id="timerRing"></div>
+            <div>
+              <div class="timer-display" id="timerDisplay">30</div>
+              <div class="subline" id="timerSubline">准备抢答</div>
+            </div>
+          </div>
+        </div>
+      `);
+      const display = document.getElementById("timerDisplay");
+      const subline = document.getElementById("timerSubline");
+      const ring = document.getElementById("timerRing");
+      let left = 30;
+      let total = 30;
+      const updateTimer = () => {
+        display.textContent = left;
+        ring.style.setProperty("--progress", `${Math.max(0, left / total * 100)}%`);
+        display.classList.toggle("danger-time", left <= 3);
+      };
+      const runTimer = () => {
+        if (state.timerId || left <= 0) return;
+        subline.textContent = "抢答倒计时";
+        state.timerId = setInterval(() => {
+          left -= 1;
+          updateTimer();
+          audioManager.play(left <= 3 ? "countdown" : "click");
+          if (left <= 0) {
+            clearInterval(state.timerId);
+            state.timerId = null;
+            display.textContent = "0";
+            display.classList.add("danger-time");
+            subline.textContent = "时间到";
+            audioManager.play("success");
+            flashResult();
+          }
+        }, 1000);
+      };
+      document.getElementById("presetTimes").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-time]");
+        if (!button) return;
+        document.getElementById("timerSeconds").value = button.dataset.time;
+        left = Number(button.dataset.time);
+        total = left;
+        updateTimer();
+      });
+      document.getElementById("startTimer").addEventListener("click", () => {
+        stopAllTimers();
+        left = Math.max(3, Number(document.getElementById("timerSeconds").value) || 30);
+        total = left;
+        updateTimer();
+        display.classList.remove("danger-time");
+        audioManager.play("start");
+        runTimer();
+      });
+      document.getElementById("pauseTimer").addEventListener("click", () => {
+        if (state.timerId) clearInterval(state.timerId);
+        state.timerId = null;
+        subline.textContent = "已暂停";
+      });
+      document.getElementById("resumeTimer").addEventListener("click", () => {
+        runTimer();
+      });
+      document.getElementById("resetTimer").addEventListener("click", () => {
+        stopAllTimers();
+        left = Math.max(3, Number(document.getElementById("timerSeconds").value) || 30);
+        total = left;
+        subline.textContent = "准备抢答";
+        updateTimer();
+      });
+    }
+
+    function renderBombTimer() {
+      if (!ensureRoster()) return;
+      openModal("炸弹倒计时", `
+        <div class="config-box">
+          <div class="form-grid">
+            <div class="field"><label>随机范围</label>
+              <select id="bombRange">
+                <option value="5,10">5-10秒</option>
+                <option value="10,20" selected>10-20秒</option>
+                <option value="20,30">20-30秒</option>
+              </select>
+            </div>
+            <button class="btn danger" id="startBomb">开始</button>
+            <button class="light-btn" id="stopBomb">停止</button>
+          </div>
+        </div>
+        <div class="stage-result" id="resultBox">
+          <div>
+            <div class="bomb-device" id="bombClock">?</div>
+            <div class="big-name" id="bigName">准备开始</div>
+            <div class="subline" id="subline">轻松有趣，不惊吓</div>
+          </div>
+        </div>
+      `);
+      document.getElementById("startBomb").addEventListener("click", () => {
+        stopAllTimers();
+        const [min, max] = document.getElementById("bombRange").value.split(",").map(Number);
+        let left = Math.floor(Math.random() * (max - min + 1)) + min;
+        let lastStudent = randomItem(activeStudents());
+        document.getElementById("bombClock").textContent = left;
+        audioManager.startLoop("ticking");
+        state.bombId = setInterval(() => {
+          left -= 1;
+          lastStudent = randomItem(activeStudents()) || lastStudent;
+          document.getElementById("bombClock").textContent = Math.max(0, left);
+          if (lastStudent) setBigResult(lastStudent.name, "传递中");
+          if (left <= 3) audioManager.play("countdown");
+          if (left <= 0) {
+            clearInterval(state.bombId);
+            state.bombId = null;
+            audioManager.stopLoop();
+            if (lastStudent) {
+              recordDraw(lastStudent, "炸弹倒计时");
+              setBigResult(lastStudent.name, "柔和砰的一声，挑战到你");
+              updateQuickScoreBox(lastStudent);
+            }
+            audioManager.play("explosionSoft");
+            burstParticles();
+          }
+        }, 1000);
+      });
+      document.getElementById("stopBomb").addEventListener("click", stopAllTimers);
+    }
+
+    function renderPassingFlower() {
+      if (!ensureRoster()) return;
+      const students = activeStudents();
+      openModal("击鼓传花", `
+        <div class="config-box">
+          <div class="form-grid">
+            <div class="field"><label>停止模式</label>
+              <select id="flowerMode">
+                <option value="manual">手动停止</option>
+                <option value="auto">随机停止</option>
+              </select>
+            </div>
+            <div class="field"><label>参与范围</label>
+              <select id="flowerScope">
+                <option value="active">当前参与学生</option>
+                <option value="available">未抽到学生优先</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="stage-controls">
+          <button class="btn cyan" id="startFlower">开始</button>
+          <button class="btn warning" id="stopFlower">停止</button>
+        </div>
+        ${resultTemplate("准备开始", "名字会快速高亮传递")}
+        <div class="flower-grid" id="flowerGrid">
+          ${students.map((student) => `<span class="flower-name" data-id="${student.id}">${escapeHtml(student.name)}</span>`).join("")}
+        </div>
+        ${renderHistoryBox()}
+      `);
+      let currentStudent = null;
+      let autoStopTimer = null;
+      const choosePool = () => document.getElementById("flowerScope").value === "available" ? availableStudents() : activeStudents();
+      const stopFlower = () => {
+        if (state.flowerId) clearInterval(state.flowerId);
+        if (autoStopTimer) clearTimeout(autoStopTimer);
+        state.flowerId = null;
+        autoStopTimer = null;
+        audioManager.stopLoop();
+        const finalStudent = currentStudent || randomItem(choosePool());
+        if (finalStudent) {
+          recordDraw(finalStudent, "击鼓传花");
+          setBigResult(finalStudent.name, "花停在这里");
+          updateQuickScoreBox(finalStudent);
+          refreshHistoryBox();
+          celebrate("applause");
+        }
+      };
+      document.getElementById("startFlower").addEventListener("click", () => {
+        stopAllTimers();
+        const pool = choosePool();
+        if (!pool.length) {
+          setBigResult("暂无可参与学生", "请恢复参与或重置记录");
+          audioManager.play("scoreMinus");
+          return;
+        }
+        let index = 0;
+        audioManager.startLoop("drum");
+        const tick = () => {
+          document.querySelectorAll(".flower-name").forEach((node) => node.classList.remove("active"));
+          currentStudent = pool[index % pool.length];
+          const node = document.querySelector(`.flower-name[data-id="${currentStudent.id}"]`);
+          if (node) node.classList.add("active");
+          setBigResult(currentStudent.name, "传花中");
+          index += 1 + Math.floor(Math.random() * 2);
+          const delay = 70 + Math.floor(Math.random() * 90);
+          state.flowerId = setTimeout(tick, delay);
+        };
+        tick();
+        if (document.getElementById("flowerMode").value === "auto") {
+          autoStopTimer = setTimeout(stopFlower, 3500 + Math.random() * 6500);
+        }
+      });
+      document.getElementById("stopFlower").addEventListener("click", stopFlower);
+    }
+
+    function buildGroups(groupCount, options = {}) {
+      const active = shuffle(activeStudents());
+      if (options.sizeMode && options.groupSize) {
+        groupCount = Math.max(1, Math.ceil(active.length / options.groupSize));
+      }
+      const groups = Array.from({ length: Math.min(groupCount, Math.max(1, active.length)) }, (_, index) => ({
+        id: "g_" + (index + 1),
+        name: `第 ${index + 1} 组`,
+        memberIds: [],
+        score: state.groups[index] ? Number(state.groups[index].score) || 0 : 0,
+        leaderId: ""
+      }));
+      active.forEach((student, index) => groups[index % groups.length].memberIds.push(student.id));
+      if (options.autoLeader) {
+        groups.forEach((group) => {
+          group.leaderId = randomItem(group.memberIds) || "";
+        });
+        audioManager.play("success");
+      }
+      state.groups = groups;
+      saveState();
+      return groups;
+    }
+
+    function memberName(id) {
+      const student = state.students.find((item) => item.id === id);
+      return student ? student.name : "已移除";
+    }
+
+    function groupCard(group, editable) {
+      return `
+        <div class="group-card" data-group-id="${group.id}">
+          <div class="group-title">
+            <span>${escapeHtml(group.name)}</span>
+            <span class="score">${group.score}</span>
+          </div>
+          <div class="group-members">
+            ${group.memberIds.map((id) => `<span class="group-member ${group.leaderId === id ? "leader-mark" : ""}">${group.leaderId === id ? "★ " : ""}${escapeHtml(memberName(id))}</span>`).join("")}
+          </div>
+          ${editable ? `
+            <div class="score-controls">
+              <button data-score="-1">-1</button>
+              <button data-score="1">+1</button>
+              <button data-score="2">+2</button>
+              <button data-score="5">+5</button>
+              <button data-score="custom">自定</button>
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }
+
+    function renderRandomGroups() {
+      if (!ensureRoster()) return;
+      openModal("自动随机分组", `
+        <div class="config-box">
+          <div class="form-grid">
+            <div class="field"><label>分成几组</label><input id="groupCount" type="number" value="4" min="2" max="12"></div>
+            <div class="field"><label>每组几人</label><input id="groupSize" type="number" value="" min="2" max="12" placeholder="可不填"></div>
+            <label class="switch-line"><span>自动选择组长</span><input type="checkbox" id="autoLeader" checked></label>
+            <button class="btn success" id="makeGroups">生成分组</button>
+            <button class="light-btn" id="remakeGroups">重新随机</button>
+          </div>
+        </div>
+        <div class="stage-result" id="resultBox" style="min-height:150px;">
+          <div>
+            <div class="big-name" id="bigName">准备分组</div>
+            <div class="subline" id="subline">点击生成后先洗牌再展示</div>
+          </div>
+        </div>
+        <div class="group-grid" id="groupGrid"></div>
+      `);
+      const render = () => {
+        document.getElementById("groupGrid").innerHTML = state.groups.map((group) => groupCard(group, false)).join("");
+      };
+      const make = async () => {
+        const count = Math.max(2, Math.min(12, Number(document.getElementById("groupCount").value) || 4));
+        const size = Number(document.getElementById("groupSize").value);
+        audioManager.play("start");
+        audioManager.startLoop("roulette");
+        const names = shuffle(activeStudents()).map((student) => student.name);
+        for (let i = 0; i < (state.audio.reduceMotion ? 5 : 16); i += 1) {
+          setBigResult(randomItem(names) || "洗牌中", "学生姓名正在随机洗牌");
+          await sleep(50 + i * 12);
+        }
+        audioManager.stopLoop();
+        buildGroups(Math.min(count, activeStudents().length || count), {
+          sizeMode: Boolean(size),
+          groupSize: size,
+          autoLeader: document.getElementById("autoLeader").checked
+        });
+        render();
+        setBigResult("分组完成", document.getElementById("autoLeader").checked ? "已自动标出组长" : "每名学生只出现一次");
+        celebrate("success");
+      };
+      document.getElementById("makeGroups").addEventListener("click", make);
+      document.getElementById("remakeGroups").addEventListener("click", make);
+      if (state.groups.length) render();
+    }
+
+    function ensureGroups() {
+      if (!state.groups.length && activeStudents().length) buildGroups(Math.min(4, activeStudents().length));
+      return state.groups.length > 0;
+    }
+
+    function renderGroupPK() {
+      if (!ensureRoster()) return;
+      ensureGroups();
+      openModal("小组PK积分", `
+        <div class="stage-controls">
+          <button class="btn success" id="regroup">重新随机分组</button>
+          <button class="btn warning" id="awardGroup">大屏颁奖</button>
+          <button class="light-btn" id="undoGroupScore">撤销上一步</button>
+          <button class="btn danger" id="clearGroupScore">小组清零</button>
+        </div>
+        <div class="config-box">
+          <div class="form-grid">
+            <div class="field"><label>自定义分数</label><input id="customGroupScore" type="number" value="3"></div>
+            <label class="switch-line"><span>显示排名</span><input type="checkbox" id="showGroupRankInPk" checked></label>
+          </div>
+        </div>
+        <div class="group-grid" id="groupGrid">${state.groups.map((group) => groupCard(group, true)).join("")}</div>
+        <div class="leaderboard" id="pkRank"></div>
+      `);
+      const updateRank = () => {
+        const box = document.getElementById("pkRank");
+        if (!box) return;
+        if (!document.getElementById("showGroupRankInPk").checked) {
+          box.innerHTML = "";
+          return;
+        }
+        const sorted = state.groups.slice().sort((a, b) => b.score - a.score);
+        box.innerHTML = sorted.map((group, index) => `
+          <div class="rank-row">
+            <span class="rank">${index === 0 ? "★" : index + 1}</span>
+            <span>${escapeHtml(group.name)}</span>
+            <span>${group.score} 分</span>
+          </div>
+        `).join("");
+      };
+      updateRank();
+      document.getElementById("groupGrid").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-score]");
+        if (!button) return;
+        const groupNode = event.target.closest("[data-group-id]");
+        const group = state.groups.find((item) => item.id === groupNode.dataset.groupId);
+        const value = button.dataset.score === "custom" ? Number(document.getElementById("customGroupScore").value) || 0 : Number(button.dataset.score);
+        state.groupScoreUndo.push(JSON.stringify(state.groups));
+        group.score += value;
+        saveState();
+        audioManager.play(value >= 0 ? "scoreAdd" : "scoreMinus");
+        const card = document.querySelector(`[data-group-id="${group.id}"]`);
+        if (card) {
+          card.classList.add("glow");
+          const score = card.querySelector(".score");
+          if (score) score.classList.add("bump");
+          const pop = document.createElement("span");
+          pop.className = "score-pop";
+          pop.textContent = value > 0 ? `+${value}` : value;
+          card.appendChild(pop);
+          setTimeout(() => renderGroupPK(), 620);
+        } else {
+          renderGroupPK();
+        }
+      });
+      document.getElementById("groupGrid").addEventListener("dblclick", (event) => {
+        const groupNode = event.target.closest("[data-group-id]");
+        if (!groupNode) return;
+        const group = state.groups.find((item) => item.id === groupNode.dataset.groupId);
+        const value = Number(document.getElementById("customGroupScore").value) || 0;
+        state.groupScoreUndo.push(JSON.stringify(state.groups));
+        group.score += value;
+        saveState();
+        audioManager.play(value >= 0 ? "scoreAdd" : "scoreMinus");
+        renderGroupPK();
+      });
+      document.getElementById("showGroupRankInPk").addEventListener("change", updateRank);
+      document.getElementById("regroup").addEventListener("click", () => {
+        buildGroups(state.groups.length || 4, { autoLeader: true });
+        renderGroupPK();
+      });
+      document.getElementById("undoGroupScore").addEventListener("click", () => {
+        const prev = state.groupScoreUndo.pop();
+        if (!prev) return;
+        state.groups = JSON.parse(prev);
+        saveState();
+        audioManager.play("click");
+        renderGroupPK();
+      });
+      document.getElementById("clearGroupScore").addEventListener("click", () => {
+        state.groupScoreUndo.push(JSON.stringify(state.groups));
+        state.groups.forEach((group) => { group.score = 0; });
+        saveState();
+        renderGroupPK();
+      });
+      document.getElementById("awardGroup").addEventListener("click", () => {
+        const winner = state.groups.slice().sort((a, b) => b.score - a.score)[0];
+        if (!winner) return;
+        openModal("小组颁奖模式", `
+          <div class="stage-result spotlight" id="resultBox">
+            <div>
+              <div class="award-mark">★</div>
+              <div class="big-name" id="bigName">${escapeHtml(winner.name)}</div>
+              <div class="subline" id="subline">今日获胜小组：${winner.score} 分</div>
+            </div>
+          </div>
+          <div class="stage-controls"><button class="light-btn" id="backToPk">返回PK</button></div>
+        `);
+        celebrate("applause");
+        document.getElementById("backToPk").addEventListener("click", renderGroupPK);
+      });
+    }
+
+    function renderGroupRank() {
+      if (!ensureRoster()) return;
+      ensureGroups();
+      const sorted = state.groups.slice().sort((a, b) => b.score - a.score);
+      openModal("小组排行榜", `
+        <div class="leaderboard">
+          ${sorted.map((group, index) => `
+            <div class="rank-row">
+              <span class="rank">${index + 1}</span>
+              <span>${escapeHtml(group.name)}</span>
+              <span>${group.score} 分</span>
+            </div>
+          `).join("")}
+        </div>
+      `);
+    }
+
+    function renderGroupStudent() {
+      if (!ensureRoster()) return;
+      ensureGroups();
+      openModal("小组抽人", `
+        ${resultTemplate("准备抽取", "先抽小组，再抽组员")}
+        <div class="stage-controls">
+          <button class="btn cyan" id="drawGroupStudent">开始抽取</button>
+        </div>
+        ${renderHistoryBox()}
+      `);
+      document.getElementById("drawGroupStudent").addEventListener("click", () => {
+        const group = randomItem(state.groups.filter((item) => item.memberIds.length));
+        const id = randomItem(group.memberIds);
+        const student = state.students.find((item) => item.id === id);
+        if (student) {
+          recordDraw(student, "小组抽人");
+          setBigResult(student.name, group.name);
+          updateQuickScoreBox(student);
+          refreshHistoryBox();
+        }
+      });
+    }
+
+    function renderGroupLeader() {
+      if (!ensureRoster()) return;
+      ensureGroups();
+      const leaders = state.groups.map((group) => {
+        const id = randomItem(group.memberIds);
+        return { group: group.name, name: memberName(id) };
+      });
+      openModal("随机组长", `
+        <div class="leaderboard">
+          ${leaders.map((item, index) => `
+            <div class="rank-row">
+              <span class="rank">${index + 1}</span>
+              <span>${escapeHtml(item.group)}</span>
+              <span>${escapeHtml(item.name)}</span>
+            </div>
+          `).join("")}
+        </div>
+      `);
+    }
+
+    function renderPartner() {
+      if (!ensureRoster()) return;
+      const students = shuffle(activeStudents());
+      const rows = [];
+      while (students.length) {
+        rows.push(students.splice(0, students.length === 3 ? 3 : 2));
+      }
+      openModal("随机搭档", `
+        <div class="leaderboard">
+          ${rows.map((pair, index) => `
+            <div class="rank-row">
+              <span class="rank">${index + 1}</span>
+              <span>${pair.map((student) => escapeHtml(student.name)).join("  ·  ")}</span>
+              <span>搭档</span>
+            </div>
+          `).join("")}
+        </div>
+      `);
+    }
+
+    function renderReward(title, preferAnswered) {
+      if (!ensureRoster()) return;
+      const isMvp = title === "今日课堂MVP";
+      const modeOptions = isMvp
+        ? `
+          <option value="top">积分最高</option>
+          <option value="top3">前三名中随机</option>
+          <option value="manual">老师手动选择</option>
+          <option value="customRandom">自定义随机</option>
+        `
+        : title === "幸运之星"
+          ? `
+            <option value="scored">本节课获得过积分</option>
+            <option value="all">全班随机</option>
+            <option value="notAwarded">未获奖学生</option>
+            <option value="manual">老师手动选择</option>
+          `
+          : title === "勇敢回答奖"
+            ? `
+              <option value="calledOrScored">被点名或获得过积分</option>
+              <option value="called">本节课被点名</option>
+              <option value="scored">本节课获得过积分</option>
+              <option value="manual">老师手动选择</option>
+            `
+            : title === "进步之星"
+              ? `
+                <option value="recentGrowth">最近获得积分</option>
+                <option value="scored">本节课获得过积分</option>
+                <option value="manual">老师手动选择</option>
+              `
+              : `
+                <option value="activeCount">获得积分次数最多</option>
+                <option value="scored">本节课获得过积分</option>
+                <option value="manual">老师手动选择</option>
+              `;
+      openModal(title, `
+        <div class="config-box">
+          <div class="form-grid">
+            <div class="field"><label>奖项名称</label><input id="awardName" type="text" value="${escapeHtml(title)}"></div>
+            <div class="field"><label>获奖人数</label>
+              <select id="awardCount">
+                <option value="1">1人</option>
+                <option value="2">2人</option>
+                <option value="3">3人</option>
+              </select>
+            </div>
+            <div class="field"><label>评选模式</label><select id="awardMode">${modeOptions}</select></div>
+            <div class="field"><label>手动选择</label>
+              <select id="manualAward">
+                <option value="">随机抽取</option>
+                ${activeStudents().map((student) => `<option value="${student.id}">${escapeHtml(student.name)}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="stage-result spotlight" id="resultBox">
+          <div>
+            <div class="award-mark">★</div>
+            <div class="big-name" id="bigName">准备颁奖</div>
+            <div class="subline" id="subline">${preferAnswered ? "优先从已回答同学中抽取" : "从当前参与名单中抽取"}</div>
+          </div>
+        </div>
+        <div class="stage-controls">
+          <button class="btn warning" id="drawReward">开始颁奖</button>
+          <button class="light-btn" id="switchRewardPool">${preferAnswered ? "改为全班抽取" : "从已回答抽取"}</button>
+          <button class="light-btn" id="returnReward">返回</button>
+        </div>
+        ${renderHistoryBox()}
+      `);
+      let fromAnswered = preferAnswered;
+      const getCandidates = () => {
+        const mode = document.getElementById("awardMode").value;
+        const active = activeStudents();
+        if (mode === "manual") {
+          const student = findStudent(document.getElementById("manualAward").value);
+          return student ? [student] : [];
+        }
+        if (isMvp && mode === "top") {
+          const max = Math.max(...active.map((student) => studentScore(student, state.mvpScoreMode)), -Infinity);
+          return active.filter((student) => studentScore(student, state.mvpScoreMode) === max && max > 0);
+        }
+        if (isMvp && mode === "top3") {
+          return rankStudents().slice(0, 3);
+        }
+        if (isMvp && mode === "customRandom") return active;
+        if (mode === "all") return active;
+        if (mode === "notAwarded") return active.filter((student) => !state.awardedStudentIds.includes(student.id));
+        if (mode === "called") return active.filter((student) => (student.calledCount || 0) > 0);
+        if (mode === "scored") return active.filter((student) => (student.lessonScoreCount || 0) > 0 || (student.lessonScore || 0) > 0);
+        if (mode === "calledOrScored") return active.filter((student) => (student.calledCount || 0) > 0 || (student.lessonScoreCount || 0) > 0);
+        if (mode === "recentGrowth") {
+          return active.filter((student) => (student.lessonScoreCount || 0) > 0).sort((a, b) => (b.lastScoreTime || 0) - (a.lastScoreTime || 0)).slice(0, 6);
+        }
+        if (mode === "activeCount") {
+          const max = Math.max(...active.map((student) => student.lessonScoreCount || 0), 0);
+          return active.filter((student) => (student.lessonScoreCount || 0) === max && max > 0);
+        }
+        return fromAnswered
+          ? state.drawHistory.map((item) => findStudent(item.id)).filter(Boolean)
+          : active;
+      };
+      document.getElementById("drawReward").addEventListener("click", async () => {
+        const awardName = document.getElementById("awardName").value.trim() || title;
+        const manualId = document.getElementById("manualAward").value;
+        const count = Math.max(1, Math.min(3, Number(document.getElementById("awardCount").value) || 1));
+        let winners = [];
+        if (manualId) {
+          const student = state.students.find((item) => item.id === manualId);
+          if (student) winners = [student];
+        } else {
+          const basePool = getCandidates();
+          winners = shuffle([...new Map(basePool.map((student) => [student.id, student])).values()]).slice(0, count);
+        }
+        if (!winners.length) {
+          setBigResult("暂无候选", isMvp ? "请先给学生加分，或切换评选模式" : "请切换候选范围");
+          return;
+        }
+        const bigName = document.getElementById("bigName");
+        audioManager.startLoop("suspense");
+        for (let i = 0; i < (state.audio.reduceMotion ? 6 : 24); i += 1) {
+          const student = randomItem(activeStudents());
+          if (student) bigName.textContent = student.name;
+          await sleep(35 + i * 7);
+        }
+        audioManager.stopLoop();
+        winners.forEach((student) => {
+          student.awardHistory.push({ award: awardName, time: Date.now() });
+          state.awardedStudentIds = [student.id, ...state.awardedStudentIds.filter((id) => id !== student.id)];
+        });
+        saveState();
+        const scoreText = winners.map((student) => `${student.name}${isMvp ? `（${studentScore(student, state.mvpScoreMode)}分）` : ""}`).join("、");
+        setBigResult(scoreText, awardName);
+        refreshHistoryBox();
+        celebrate("applause");
+      });
+      document.getElementById("switchRewardPool").addEventListener("click", (event) => {
+        fromAnswered = !fromAnswered;
+        event.currentTarget.textContent = fromAnswered ? "改为全班抽取" : "从已回答抽取";
+        setBigResult("抽取范围已切换", fromAnswered ? "从已回答同学中抽取" : "从当前参与名单中抽取");
+      });
+      document.getElementById("returnReward").addEventListener("click", closeModal);
+    }
+
+    function renderClassScore() {
+      if (!ensureRoster()) return;
+      const rows = activeStudents()
+        .slice()
+        .sort((a, b) => (b.lessonScore || 0) - (a.lessonScore || 0))
+        .map((student) => `
+          <div class="student-score-row" data-student-id="${student.id}">
+            <strong>${escapeHtml(student.name)}：${student.lessonScore || 0} 分</strong>
+            <span class="score-buttons">
+              <button data-student-score="-1">-1</button>
+              <button data-student-score="1">+1</button>
+              <button data-student-score="2">+2</button>
+              <button data-student-score="5">+5</button>
+            </span>
+          </div>
+        `).join("");
+      openModal("课堂积分榜", `
+        <div class="stage-controls">
+          <button class="btn danger" id="clearStudentScore">积分清零</button>
+        </div>
+        <div class="leaderboard" id="studentScoreBoard">${rows}</div>
+      `);
+      document.getElementById("studentScoreBoard").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-student-score]");
+        if (!button) return;
+        const row = event.target.closest("[data-student-id]");
+        const id = row.dataset.studentId;
+        const value = Number(button.dataset.studentScore);
+        addScore(id, value, "课堂积分榜");
+        renderClassScore();
+      });
+      document.getElementById("clearStudentScore").addEventListener("click", () => {
+        state.students.forEach((student) => { student.lessonScore = 0; student.lessonScoreCount = 0; });
+        saveState();
+        audioManager.play("success");
+        renderClassScore();
+      });
+    }
+
+    function handleTool(id) {
+      const map = {
+        randomName: () => renderSimpleDraw("随机点名", "开始点名", "随机点名结果", "随机点名"),
+        noRepeatName: () => renderSimpleDraw("不重复点名", "开始点名", "本轮不重复点名", "不重复点名", { forceNoRepeat: true }),
+        wheel: renderWheel,
+        magicDraw: renderMagicDraw,
+        luckyNumber: renderLuckyNumber,
+        luckyCards: () => renderCards("幸运卡牌", "student"),
+        flipChallenge: () => renderCards("翻牌挑战", "challenge"),
+        flipStudent: () => renderCards("翻牌抽人", "student"),
+        questionNumber: renderQuestionNumber,
+        quizTimer: () => renderQuizTimer("quiz"),
+        passingFlower: renderPassingFlower,
+        bombTimer: renderBombTimer,
+        randomGroups: renderRandomGroups,
+        groupPK: renderGroupPK,
+        groupRank: renderGroupRank,
+        groupStudent: renderGroupStudent,
+        groupLeader: renderGroupLeader,
+        partner: renderPartner,
+        luckyStar: () => renderReward("幸运之星", false),
+        mvp: () => renderReward("今日课堂MVP", true),
+        braveAward: () => renderReward("勇敢回答奖", true),
+        progressStar: () => renderReward("进步之星", false),
+        activeStar: () => renderReward("课堂积极之星", false),
+        classScore: renderClassScore
+      };
+      map[id]();
+    }
+
+    function renderToolCards() {
+      Object.entries(tools).forEach(([category, list]) => {
+        const containerId = {
+          rollCall: "rollCallTools",
+          interaction: "interactionTools",
+          group: "groupTools",
+          reward: "rewardTools"
+        }[category];
+        document.getElementById(containerId).innerHTML = list.filter(([id]) => id !== "classScore").map(([id, title, desc, color]) => `
+          <button class="tool-card" data-tool="${id}" style="--accent:${color}">
+            <span class="tool-icon" aria-hidden="true"></span>
+            <strong>${title}</strong>
+            <span>${desc}</span>
+          </button>
+        `).join("");
+      });
+      document.querySelectorAll(".tool-card").forEach((card) => {
+        card.addEventListener("click", (event) => {
+          event.stopPropagation();
+          handleTool(card.dataset.tool);
+        });
+      });
+    }
+
+    function renderFloatingPieces() {
+      if (state.audio.reduceMotion || document.querySelector(".floating-piece")) return;
+      const colors = ["rgba(37,99,235,.16)", "rgba(22,163,74,.14)", "rgba(249,115,22,.15)", "rgba(250,204,21,.22)", "rgba(124,58,237,.12)"];
+      for (let i = 0; i < 18; i += 1) {
+        const piece = document.createElement("span");
+        piece.className = "floating-piece";
+        piece.style.left = `${Math.random() * 96}%`;
+        piece.style.top = `${Math.random() * 92}%`;
+        piece.style.background = colors[i % colors.length];
+        piece.style.animationDelay = `${Math.random() * 8}s`;
+        piece.style.animationDuration = `${10 + Math.random() * 12}s`;
+        document.body.appendChild(piece);
+      }
+    }
+
+    function clearFloatingPieces() {
+      document.querySelectorAll(".floating-piece").forEach((node) => node.remove());
+    }
+
+    function bindEvents() {
+      document.addEventListener("pointerdown", () => audioManager.unlock(), { once: true });
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) audioManager.stopLoop();
+      });
+      document.body.addEventListener("click", (event) => {
+        if (event.target.closest("button")) audioManager.play("click");
+      });
+      els.soundToggle.addEventListener("click", () => {
+        state.audio.soundEnabled = !state.audio.soundEnabled;
+        audioManager.applySettings();
+        saveState();
+      });
+      els.musicToggle.addEventListener("click", () => {
+        state.audio.musicEnabled = !state.audio.musicEnabled;
+        audioManager.applySettings();
+        saveState();
+      });
+      els.muteToggle.addEventListener("click", () => {
+        state.audio.muted = !state.audio.muted;
+        audioManager.applySettings();
+        saveState();
+      });
+      els.motionToggle.addEventListener("click", () => {
+        state.audio.reduceMotion = !state.audio.reduceMotion;
+        audioManager.applySettings();
+        if (state.audio.reduceMotion) clearFloatingPieces();
+        else renderFloatingPieces();
+        saveState();
+      });
+      els.boostToggle.addEventListener("click", () => {
+        state.audio.classroomBoost = !state.audio.classroomBoost;
+        audioManager.applySettings();
+        saveState();
+      });
+      els.volumeSlider.addEventListener("input", (event) => {
+        state.audio.volume = Number(event.target.value) / 100;
+        audioManager.applySettings();
+        saveState();
+      });
+      els.testSoundBtn.addEventListener("click", () => {
+        audioManager.unlock();
+        audioManager.play("success");
+      });
+      els.stopAudioBtn.addEventListener("click", () => audioManager.stopLoop());
+      els.scoreDockToggle.addEventListener("click", () => {
+        state.scorePanelOpen = true;
+        saveState();
+        renderScorePanel();
+      });
+      els.scoreDockClose.addEventListener("click", () => {
+        state.scorePanelOpen = false;
+        saveState();
+        renderScorePanel();
+      });
+      els.scoreSearch.addEventListener("input", () => renderScorePanel());
+      els.scoreQuickList.addEventListener("click", (event) => {
+        const row = event.target.closest("[data-score-student]");
+        if (!row) return;
+        const id = row.dataset.scoreStudent;
+        const scoreButton = event.target.closest("[data-quick-score]");
+        if (scoreButton) addScore(id, Number(scoreButton.dataset.quickScore), "课堂积分面板");
+        if (event.target.closest("[data-clear-student-score]")) {
+          const student = findStudent(id);
+          if (student && confirm(`确定清零 ${student.name} 的本节课积分吗？累计积分保留。`)) {
+            state.scoreUndo.push({ studentId: id, beforeScore: student.score || 0, beforeLessonScore: student.lessonScore || 0, beforeScoreCount: student.scoreCount || 0, beforeLessonScoreCount: student.lessonScoreCount || 0, time: Date.now() });
+            student.lessonScore = 0;
+            student.lessonScoreCount = 0;
+            saveState();
+            renderScorePanel(id);
+          }
+        }
+      });
+      els.scoreApplyCustom.addEventListener("click", () => {
+        const first = scoreCandidates(els.scoreSearch.value)[0];
+        if (first) addScore(first.id, Number(els.scoreCustomValue.value) || 0, "自定义加分");
+      });
+      els.showAllScores.addEventListener("click", () => {
+        els.scoreSearch.value = "";
+        state.recentScoreStudentIds = activeStudents().map((student) => student.id).slice(0, 8);
+        renderScorePanel();
+      });
+      els.showScoreRank.addEventListener("click", () => openScoreRank());
+      els.showScoreLogs.addEventListener("click", openScoreLogs);
+      els.undoScoreBtn.addEventListener("click", undoScore);
+      els.endLessonBtn.addEventListener("click", openEndLessonDialog);
+      document.querySelectorAll('input[name="scoreMode"]').forEach((input) => {
+        input.addEventListener("change", () => {
+          state.scoreMode = input.value;
+          saveState();
+        });
+      });
+      document.querySelectorAll('input[name="mvpScoreMode"]').forEach((input) => {
+        input.addEventListener("change", () => {
+          state.mvpScoreMode = input.value;
+          saveState();
+          renderScorePanel();
+        });
+      });
+
+      els.importBtn.addEventListener("click", () => {
+        const { names, duplicates } = parseRoster(els.rosterInput.value);
+        const oldByName = new Map(state.students.map((student) => [student.name, student]));
+        const hasOldScores = names.some((name) => oldByName.has(name) && ((oldByName.get(name).score || 0) !== 0 || (oldByName.get(name).lessonScore || 0) !== 0));
+        const keepScores = hasOldScores ? confirm("检测到同名学生已有积分，是否保留同名学生积分？") : false;
+        state.students = names.map((name) => {
+          const old = oldByName.get(name);
+          return keepScores && old
+            ? normalizeStudent({ ...old, name, active: true, hidden: false })
+            : normalizeStudent({ id: uid(), name, active: true, hidden: false });
+        });
+        state.drawHistory = [];
+        state.groups = [];
+        state.classScores = {};
+        state.numberHistory = [];
+        state.scoreLogs = keepScores ? state.scoreLogs : [];
+        state.scoreUndo = [];
+        state.recentScoreStudentIds = [];
+        state.awardedStudentIds = [];
+        if (duplicates.length) {
+          els.duplicateNotice.textContent = `发现重复姓名，已保留一份：${duplicates.join("、")}`;
+          els.duplicateNotice.classList.add("show");
+        } else {
+          els.duplicateNotice.classList.remove("show");
+          els.duplicateNotice.textContent = "";
+        }
+        saveState();
+        renderAll();
+      });
+
+      els.clearBtn.addEventListener("click", () => {
+        state.students = [];
+        state.drawHistory = [];
+        state.groups = [];
+        state.classScores = {};
+        state.numberHistory = [];
+        state.scoreLogs = [];
+        state.scoreUndo = [];
+        state.recentScoreStudentIds = [];
+        state.awardedStudentIds = [];
+        els.rosterInput.value = "";
+        els.duplicateNotice.classList.remove("show");
+        saveState();
+        renderAll();
+      });
+
+      els.allowRepeat.addEventListener("change", (event) => {
+        state.allowRepeat = event.target.checked;
+        saveState();
+        renderAll();
+      });
+
+      els.resetHistoryBtn.addEventListener("click", () => {
+        state.drawHistory = [];
+        saveState();
+        renderAll();
+      });
+
+      els.showAllBtn.addEventListener("click", () => {
+        state.students.forEach((student) => { student.hidden = false; student.active = true; });
+        saveState();
+        renderAll();
+      });
+
+      els.clearLocalDataBtn.addEventListener("click", () => {
+        const ok = confirm("确定清除本机保存的学生名单、积分、点名记录和设置吗？此操作只影响当前浏览器。");
+        if (!ok) return;
+        audioManager.stopLoop();
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (error) {
+          console.warn("清除本机数据失败", error);
+        }
+        window.location.reload();
+      });
+
+      els.studentList.addEventListener("click", (event) => {
+        if (event.target.closest("[data-open-roster-manager]")) openRosterManager();
+        if (event.target.closest("[data-reimport-roster]")) {
+          els.rosterInput.focus();
+          els.rosterInput.select();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        if (event.target.closest("[data-clear-roster-inline]")) els.clearBtn.click();
+      });
+
+      document.body.addEventListener("click", (event) => {
+        const tool = event.target.closest("[data-tool]");
+        const quickScore = event.target.closest("[data-result-score]");
+        if (quickScore) {
+          const box = event.target.closest("#quickScoreBox");
+          const studentId = box ? box.dataset.studentId : "";
+          const value = quickScore.dataset.resultScore === "custom" ? Number(prompt("请输入加分数", "3")) || 0 : Number(quickScore.dataset.resultScore);
+          if (studentId && value) {
+            addScore(studentId, value, "抽取结果快捷加分");
+            box.classList.add("done");
+            box.querySelectorAll("[data-result-score]").forEach((button) => {
+              button.disabled = true;
+              button.textContent = "已加分";
+            });
+          }
+          return;
+        }
+        if (tool) handleTool(tool.dataset.tool);
+      });
+
+      els.closeModal.addEventListener("click", closeModal);
+      els.modal.addEventListener("click", (event) => {
+        if (event.target === els.modal) closeModal();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && els.modal.classList.contains("open")) closeModal();
+      });
+    }
+
+    loadState();
+    audioManager.init();
+    if (!state.audio.reduceMotion) renderFloatingPieces();
+    renderToolCards();
+    bindEvents();
+    renderAll();
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch((error) => {
+          console.warn("离线缓存注册失败", error);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

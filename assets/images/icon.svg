@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="课堂互动工具箱">
+  <rect width="512" height="512" rx="112" fill="#2563eb"/>
+  <circle cx="390" cy="128" r="54" fill="#facc15"/>
+  <circle cx="120" cy="384" r="44" fill="#22c55e"/>
+  <path d="M128 166c0-27.6 22.4-50 50-50h156c27.6 0 50 22.4 50 50v180c0 27.6-22.4 50-50 50H178c-27.6 0-50-22.4-50-50V166z" fill="#fff"/>
+  <path d="M176 188h160M176 244h112M176 300h142" stroke="#1f2937" stroke-width="28" stroke-linecap="round"/>
+  <path d="M348 332l32 18-32 18-18 32-18-32-32-18 32-18 18-32 18 32z" fill="#f97316"/>
+</svg>
