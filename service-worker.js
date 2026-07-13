@@ -1,8 +1,9 @@
-const CACHE_NAME = "classroom-toolbox-v1";
+const CACHE_NAME = "classroom-toolbox-v4";
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./assets/audio/test-tone.wav",
   "./assets/audio/README.md",
   "./assets/images/icon.svg"
 ];

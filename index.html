@@ -853,14 +853,14 @@
 
     .student-name {
       display: block;
-      color: #1f2937;
+      color: #111827;
       font-size: clamp(24px, 3vw, 42px);
       font-weight: 800;
       line-height: 1.2;
       text-align: center;
       opacity: 1;
       visibility: visible;
-      z-index: 5;
+      z-index: 10;
       padding: 12px;
       word-break: break-all;
       overflow-wrap: anywhere;
@@ -1655,7 +1655,11 @@
         <div class="sound-row">
           <button class="sound-toggle" id="motionToggle" type="button">动画 标准</button>
           <button class="sound-toggle" id="boostToggle" type="button">课堂扩音 关</button>
-          <button class="sound-toggle" id="testSoundBtn" type="button">试听</button>
+          <button class="sound-toggle" id="enableAudioBtn" type="button">启用课堂音效</button>
+        </div>
+        <div class="sound-row">
+          <button class="sound-toggle" id="testSoundBtn" type="button">测试音效</button>
+          <button class="sound-toggle" id="resetAudioBtn" type="button">恢复默认音效</button>
         </div>
         <button class="sound-toggle" id="stopAudioBtn" type="button">停止音乐</button>
         <label class="volume-wrap">
@@ -1787,6 +1791,7 @@
 
   <script>
     const STORAGE_KEY = "primaryClassroomToolbox.v1";
+    const AUDIO_TEST_PATH = "./assets/audio/test-tone.wav";
 
     const state = {
       students: [],
@@ -1883,7 +1888,9 @@
       muteToggle: document.getElementById("muteToggle"),
       motionToggle: document.getElementById("motionToggle"),
       boostToggle: document.getElementById("boostToggle"),
+      enableAudioBtn: document.getElementById("enableAudioBtn"),
       testSoundBtn: document.getElementById("testSoundBtn"),
+      resetAudioBtn: document.getElementById("resetAudioBtn"),
       stopAudioBtn: document.getElementById("stopAudioBtn"),
       volumeSlider: document.getElementById("volumeSlider"),
       volumeValue: document.getElementById("volumeValue"),
@@ -1912,18 +1919,28 @@
       init() {
         this.applySettings();
       },
-      unlock() {
-        if (this.unlocked) return;
+      async unlock() {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) {
           els.audioTip.textContent = "当前浏览器不支持课堂音效。";
-          return;
+          return false;
         }
-        this.ctx = this.ctx || new AudioContext();
-        if (this.ctx.state === "suspended") this.ctx.resume();
-        this.unlocked = true;
-        els.audioTip.textContent = "课堂音效已启用。";
-        els.audioOverlay.classList.remove("show");
+        try {
+          this.ctx = this.ctx || new AudioContext();
+          if (this.ctx.state === "suspended") await this.ctx.resume();
+          this.unlocked = this.ctx.state === "running";
+          if (this.unlocked) {
+            els.audioTip.textContent = "课堂音效已启用。";
+            els.audioOverlay.classList.remove("show");
+            return true;
+          }
+          els.audioTip.textContent = `音频尚未启用，AudioContext状态：${this.ctx.state}`;
+          return false;
+        } catch (error) {
+          console.error("音频启用失败：", error);
+          els.audioTip.textContent = "音频启用失败，请再次点击“启用课堂音效”。";
+          return false;
+        }
       },
       gainValue(multiplier = 1) {
         if (state.audio.muted) return 0;
@@ -1940,22 +1957,27 @@
       ensureUnlocked() {
         if (this.unlocked) return true;
         els.audioOverlay.classList.add("show");
-        els.audioTip.textContent = "点击页面任意位置启用课堂音效。";
+        els.audioTip.textContent = "请先点击“启用课堂音效”。";
         return false;
       },
       tone(freq, duration = 0.12, type = "sine", gain = 0.18) {
         if (!this.canPlay("sound") || !this.ensureUnlocked() || !this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const amp = this.ctx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, now);
-        amp.gain.setValueAtTime(0.0001, now);
-        amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, this.gainValue(gain)), now + 0.02);
-        amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-        osc.connect(amp).connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + duration + 0.03);
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const amp = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          amp.gain.setValueAtTime(0.0001, now);
+          amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, this.gainValue(gain)), now + 0.02);
+          amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+          osc.connect(amp).connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + duration + 0.03);
+        } catch (error) {
+          console.error("音频播放失败：", error);
+          els.audioTip.textContent = "音频播放失败，请先点击“启用课堂音效”。";
+        }
       },
       play(name) {
         if (!this.canPlay("sound") || !this.ensureUnlocked()) return;
@@ -1973,6 +1995,52 @@
           scoreMinus: () => this.tone(260, .12, "sine", .20)
         };
         (patterns[name] || patterns.click)();
+      },
+      async playFile(path = AUDIO_TEST_PATH) {
+        const audio = new Audio(path);
+        audio.preload = "auto";
+        audio.volume = Math.max(0.8, Math.min(1, Number(state.audio.volume || 1)));
+        audio.currentTime = 0;
+        await audio.play();
+        return audio;
+      },
+      async runAudioTest() {
+        state.audio.muted = false;
+        state.audio.soundEnabled = true;
+        state.audio.musicEnabled = true;
+        state.audio.volume = 1;
+        this.applySettings();
+        saveState();
+        const absolutePath = new URL(AUDIO_TEST_PATH, window.location.href).href;
+        let statusText = "未请求";
+        try {
+          const response = await fetch(AUDIO_TEST_PATH, { cache: "reload" });
+          statusText = `${response.status} ${response.ok ? "OK" : "失败"}`;
+        } catch (error) {
+          statusText = `请求失败：${error.message}`;
+        }
+        const unlocked = await this.unlock();
+        let playResult = "未播放";
+        try {
+          if (!unlocked) throw new Error("AudioContext未启用");
+          await this.playFile(AUDIO_TEST_PATH);
+          this.play("success");
+          playResult = "播放成功";
+        } catch (error) {
+          console.error("音频播放失败：", error);
+          playResult = `播放失败：${error.message}`;
+        }
+        els.audioTip.textContent = `音频路径：${absolutePath}｜加载状态：${statusText}｜AudioContext状态：${this.ctx ? this.ctx.state : "不可用"}｜播放结果：${playResult}`;
+      },
+      resetDefaults() {
+        state.audio.soundEnabled = true;
+        state.audio.musicEnabled = true;
+        state.audio.muted = false;
+        state.audio.volume = 1;
+        state.audio.classroomBoost = true;
+        this.applySettings();
+        saveState();
+        els.audioTip.textContent = "已恢复默认音效设置，请点击“测试音效”。";
       },
       startLoop(name) {
         if (!this.canPlay("music") || !this.ensureUnlocked()) return;
@@ -2102,9 +2170,10 @@
         state.showQuickScore = data.showQuickScore !== false;
         if (data.audio && typeof data.audio === "object") {
           state.audio = { ...state.audio, ...data.audio };
-          if (typeof data.audio.classroomBoost === "undefined" && Number(state.audio.volume) < 0.6) {
-            state.audio.volume = 0.78;
-          }
+          state.audio.muted = false;
+          state.audio.soundEnabled = true;
+          state.audio.musicEnabled = true;
+          state.audio.volume = Math.max(0.8, Number(state.audio.volume) || 0.8);
         }
         normalizeAllStudents();
         els.rosterInput.value = state.students.map((student, index) => `${index + 1}. ${student.name}`).join("\n");
@@ -2914,7 +2983,7 @@
     function renderCards(title, mode) {
       if (!ensureRoster()) return;
       const studentPool = state.allowRepeat ? activeStudents() : availableStudents();
-      const pool = mode === "challenge" ? challengeCards : studentPool;
+      const pool = studentPool;
       const items = shuffle(pool).slice(0, Math.min(pool.length, 24));
       if (!items.length) {
         openModal(title, `<div class="message">当前没有可翻开的学生卡。可开启重复抽取，或重置本节课记录。</div>`);
@@ -2927,11 +2996,11 @@
         </div>
         <div class="cards-grid">
           ${items.map((item, index) => `
-            <button class="flip-card" data-card-value="${escapeHtml(mode === "challenge" ? item : item.name)}" data-card-id="${mode === "challenge" ? "" : item.id}" data-student-id="${mode === "challenge" ? "" : item.id}">
+            <button class="flip-card" data-card-value="${escapeHtml(item.name)}" data-card-id="${item.id}" data-student-id="${item.id}">
               <span class="flip-inner flip-card-inner">
                 <span class="flip-face flip-front flip-card-front"><span>?</span><span style="position:absolute;bottom:16px;font-size:18px;">${index + 1}</span></span>
                 <span class="flip-face flip-back flip-card-back">
-                  <span class="student-name">${mode === "challenge" ? escapeHtml(item) : escapeHtml(item.name)}</span>
+                  <span class="student-name">${escapeHtml(item.name)}</span>
                 </span>
               </span>
             </button>
@@ -2952,31 +3021,32 @@
         card.addEventListener("click", () => {
           if (card.classList.contains("flipped") || card.classList.contains("is-flipped")) return;
           audioManager.play("cardFlip");
-          card.classList.add("flipped");
-          card.classList.add("is-flipped");
-          card.closest(".cards-grid").classList.add("has-selection");
           const nameEl = card.querySelector(".student-name");
           const result = document.querySelector("#flip-result");
           const resultName = document.querySelector("#flip-result-name");
-          if (mode === "challenge") {
-            const challengeText = card.dataset.cardValue || "挑战卡";
-            if (nameEl) nameEl.textContent = challengeText;
-            audioManager.play("reveal");
-            burstParticles(card, 14);
+          const student = state.students.find((item) => String(item.id) === String(card.dataset.studentId));
+          if (!student || !student.name) {
+            const errorText = "未读取到学生姓名，请重新导入名单";
+            if (nameEl) nameEl.textContent = errorText;
+            if (resultName) resultName.textContent = errorText;
+            if (result) result.classList.add("show");
+            els.audioTip.textContent = errorText;
             return;
           }
-          const student = state.students.find((item) => String(item.id) === card.dataset.studentId);
-          console.log("当前翻牌学生：", student);
-          console.log("当前学生姓名：", student?.name);
-          console.log("姓名元素：", nameEl);
-          console.log("翻牌状态：", card.classList.contains("is-flipped"));
-          const studentName = student?.name || "未读取到学生姓名，请重新导入名单";
+          const studentName = student.name;
           if (nameEl) nameEl.textContent = studentName;
           if (resultName) resultName.textContent = studentName;
           if (result) result.classList.add("show");
-          if (student) recordDraw(student, title);
+          card.classList.add("flipped");
+          card.classList.add("is-flipped");
+          card.closest(".cards-grid").classList.add("has-selection");
+          console.log("当前翻牌学生：", student);
+          console.log("当前学生姓名：", studentName);
+          console.log("姓名元素：", nameEl);
+          console.log("翻牌状态：", card.classList.contains("is-flipped"));
+          recordDraw(student, title);
           refreshHistoryBox();
-          if (student) updateQuickScoreBox(student);
+          updateQuickScoreBox(student);
           celebrate("success");
         });
       });
@@ -3827,9 +3897,24 @@
         audioManager.applySettings();
         saveState();
       });
-      els.testSoundBtn.addEventListener("click", () => {
-        audioManager.unlock();
-        audioManager.play("success");
+      els.enableAudioBtn.addEventListener("click", async () => {
+        state.audio.muted = false;
+        state.audio.soundEnabled = true;
+        state.audio.musicEnabled = true;
+        state.audio.volume = Math.max(0.8, Number(state.audio.volume) || 0.8);
+        audioManager.applySettings();
+        saveState();
+        const ok = await audioManager.unlock();
+        if (ok) {
+          audioManager.play("success");
+          els.audioTip.textContent = "课堂音效已启用。";
+        }
+      });
+      els.testSoundBtn.addEventListener("click", async () => {
+        await audioManager.runAudioTest();
+      });
+      els.resetAudioBtn.addEventListener("click", () => {
+        audioManager.resetDefaults();
       });
       els.stopAudioBtn.addEventListener("click", () => audioManager.stopLoop());
       els.scoreDockToggle.addEventListener("click", () => {
