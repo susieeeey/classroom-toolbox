@@ -1,4 +1,4 @@
-const CACHE_NAME = "classroom-toolbox-v4";
+const CACHE_NAME = "classroom-toolbox-v6";
 const APP_ASSETS = [
   "./",
   "./index.html",
