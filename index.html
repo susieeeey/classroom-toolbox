@@ -1082,6 +1082,7 @@
       box-shadow: 0 14px 30px rgba(31, 41, 55, .12);
       z-index: 50;
       display: none;
+      pointer-events: none;
     }
 
     .audio-overlay.show { display: block; animation: slideUp .24s ease both; }
@@ -2237,7 +2238,7 @@
           this.unlocked = this.ctx.state === "running";
           if (this.unlocked) {
             els.audioTip.textContent = "课堂音效已启用。";
-            els.audioOverlay.classList.remove("show");
+            if (els.audioOverlay) els.audioOverlay.classList.remove("show");
             return true;
           }
           els.audioTip.textContent = `音频尚未启用，AudioContext状态：${this.ctx.state}`;
@@ -2262,7 +2263,7 @@
       },
       ensureUnlocked() {
         if (this.unlocked) return true;
-        els.audioOverlay.classList.add("show");
+        if (els.audioOverlay) els.audioOverlay.classList.add("show");
         els.audioTip.textContent = "请先点击“启用课堂音效”。";
         return false;
       },
@@ -2617,7 +2618,7 @@
 
     function showAudioTip() {
       if (!audioManager.unlocked && (state.audio.soundEnabled || state.audio.musicEnabled) && !state.audio.muted) {
-        els.audioOverlay.classList.add("show");
+        if (els.audioOverlay) els.audioOverlay.classList.add("show");
       }
     }
 
@@ -4117,6 +4118,10 @@
         activeStar: () => renderReward("课堂积极之星", false),
         classScore: renderClassScore
       };
+      if (!map[id]) {
+        console.warn("未找到课堂工具：", id);
+        return;
+      }
       map[id]();
     }
 
