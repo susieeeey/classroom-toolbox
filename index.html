@@ -1752,14 +1752,15 @@
     }
 
     .title-wrap h1 {
-      display: inline-block;
-      font-size: clamp(38px, 5vw, 64px);
+      display: block;
+      width: min(760px, 100%);
+      aspect-ratio: 1008 / 253;
+      margin: -6px 0 0;
       color: transparent;
-      background: linear-gradient(90deg, #2368df 0%, #19a974 27%, #ff8a1f 48%, #db4cd2 68%, #2368df 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-stroke: 2px rgba(255, 255, 255, .86);
-      text-shadow: 0 5px 0 rgba(255,255,255,.88), 0 14px 26px rgba(64, 113, 174, .16);
+      background: url("./assets/images/title-sticker.png") left center / contain no-repeat;
+      text-indent: -9999px;
+      overflow: hidden;
+      filter: drop-shadow(0 14px 18px rgba(64, 113, 174, .14));
     }
 
     .title-wrap p {

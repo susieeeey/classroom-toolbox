@@ -1,11 +1,12 @@
-const CACHE_NAME = "classroom-toolbox-v6";
+const CACHE_NAME = "classroom-toolbox-v7";
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
   "./assets/audio/test-tone.wav",
   "./assets/audio/README.md",
-  "./assets/images/icon.svg"
+  "./assets/images/icon.svg",
+  "./assets/images/title-sticker.png"
 ];
 
 self.addEventListener("install", (event) => {
